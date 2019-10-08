@@ -165,6 +165,22 @@ namespace TPSLRawDataSimulator
             return bytes;
         }
 
+        public static byte[] ArrayToBytes(Array arrayObject, UnmanagedType elementType,bool isBigEndian) {
+            List<byte> result = new List<byte>();
+            foreach (var element in arrayObject) {
+                if (elementType == UnmanagedType.I1 || elementType == UnmanagedType.U1)
+                    result.Add(isBigEndian? BytesHelper.GetBytes(element).First(): BytesHelper.GetBytes(element).Last());
+                    //result.Add(unchecked(Convert.ToByte(element)));
+                if (elementType == UnmanagedType.I2 || elementType == UnmanagedType.U2)
+                    result.AddRange(BytesHelper.GetBytes(element));
+                if (elementType == UnmanagedType.I4 || elementType == UnmanagedType.U4)
+                    result.AddRange(BytesHelper.GetBytes(element));
+                if (elementType == UnmanagedType.I8 || elementType == UnmanagedType.U8)
+                    result.AddRange(BytesHelper.GetBytes(element));
+            }
+            return result.ToArray();
+        }
+
         public static byte[] IEnumerableToBytes<T>(IEnumerable<T> obj)
         {
             var array = obj.ToArray();
@@ -218,5 +234,128 @@ namespace TPSLRawDataSimulator
                     return -1;
             }
         }
+
+        /// <summary>
+        /// Get the bytes of the given object.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        public static byte[] GetBytes(object obj) {
+            var objType = obj.GetType();
+            if (objType == typeof(int)) {
+                return BitConverter.GetBytes((int)obj);
+            }
+            if (objType == typeof(uint))
+            {
+                var result = BitConverter.GetBytes((uint)obj);
+                return result;
+            }
+            if (objType == typeof(byte))
+            {
+                return new[] { (byte)obj };
+            }
+            if (objType == typeof(sbyte))
+            {
+                return BitConverter.GetBytes((sbyte)obj);
+            }
+            if (objType == typeof(short))
+            {
+                return BitConverter.GetBytes((short)obj);
+            }
+            if (objType == typeof(ushort))
+            {
+                return BitConverter.GetBytes((ushort)obj);
+            }
+            if (objType == typeof(long))
+            {
+                return BitConverter.GetBytes((long)obj);
+            }
+            if (objType == typeof(ulong))
+            {
+                return BitConverter.GetBytes((ulong)obj);
+            }
+            if (objType == typeof(char))
+            {
+                return BitConverter.GetBytes((char)obj);
+            }
+            if (objType == typeof(bool))
+            {
+                return BitConverter.GetBytes((bool)obj);
+            }
+            throw new NotImplementedException();
+        }
+
+
+        public static object GetTypedObjectFromBytes(byte[] bytes, Type objType,bool isBigEndian)
+        {
+            if (objType == typeof(int))
+            {
+                return BitConverter.ToInt32(bytes);
+            }
+            if (objType == typeof(uint))
+            {
+                return BitConverter.ToUInt32(bytes);
+            }
+            if (objType == typeof(byte))
+            {
+                return isBigEndian?bytes.First(): bytes.Last();
+            }
+            if (objType == typeof(sbyte))
+            {
+                return (sbyte)(isBigEndian ? bytes.First() : bytes.Last());
+            }
+            if (objType == typeof(short))
+            {
+                return BitConverter.ToInt32(bytes);
+            }
+            if (objType == typeof(ushort))
+            {
+                return unchecked((ushort)BitConverter.ToInt16(bytes));
+            }
+            if (objType == typeof(long))
+            {
+                return BitConverter.ToInt64(bytes);
+            }
+            if (objType == typeof(ulong))
+            {
+                return unchecked((ulong)BitConverter.ToInt64(bytes));
+            }
+            if (objType == typeof(char))
+            {
+                return BitConverter.ToChar(bytes);
+            }
+            if (objType == typeof(bool))
+            {
+                return BitConverter.ToBoolean(bytes);
+            }
+            throw new NotImplementedException();
+
+        }
+
+        /// <summary>
+        /// this method is for unboxing a object.
+        /// if you unbox a object to another type instead of its origin type, you will get an exception.
+        /// </summary>
+        /// <param name="obj"></param>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        //public static object ConvertTo(object obj,Type originType,Type convertToType) {
+        //    unchecked {
+        //        if (originType == typeof(int))
+        //            return (int)obj;
+        //        if ()
+        //    }
+
+        //}
+    }
+
+    public enum Endian {
+        BigEndian,
+        LittleEndian
+    }
+
+    [AttributeUsage(AttributeTargets.Struct,AllowMultiple =false,Inherited =false)]
+    public class StructToRawAttribute:Attribute {
+        public Endian Endian { get; set; }
     }
 }

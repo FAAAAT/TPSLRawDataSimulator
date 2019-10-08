@@ -31,7 +31,7 @@ namespace TPSLRawDataSimulator
             t.I1 = 1;
             t.U2 = 2;
             var stream = new MemoryStream();
-            new RawBinaryFormatter().Serialize(stream,t);
+            new RawBinaryFormatter().Serialize(stream, t);
             var buffer = stream.ToArray();
             foreach (var data in buffer)
             {
@@ -40,11 +40,31 @@ namespace TPSLRawDataSimulator
             }
             Console.WriteLine("------------------------");
 
-            foreach (var memberInfo in typeof(test).GetMembers(BindingFlags.Public|BindingFlags.Instance))
+         
+
+            foreach (var memberInfo in typeof(test).GetMembers(BindingFlags.Public | BindingFlags.Instance))
             {
-                if(((int)(memberInfo.MemberType & (MemberTypes.Field | MemberTypes.Property))) != 0)
+                if (((int)(memberInfo.MemberType & (MemberTypes.Field | MemberTypes.Property))) != 0)
                     Console.WriteLine(memberInfo.Name);
             }
+            Console.WriteLine("------------------------");
+
+
+            testArray ta = new testArray();
+            ta.IA1 = new[] { 1, 2, 3, 4, 5, 6, int.MaxValue };
+            ta.UA2 = new uint[]{ 1, 2, 3, 4, 5, 6, uint.MaxValue };
+
+            stream = new MemoryStream();
+            new RawBinaryFormatter().Serialize(stream, ta);
+            buffer = stream.ToArray();
+            foreach (var data in buffer)
+            {
+                Console.Write(Convert.ToString(data, 2) + ',');
+
+            }
+            Console.WriteLine();
+            Console.WriteLine("------------------------");
+
 
             Console.ReadLine();
         }
@@ -53,6 +73,16 @@ namespace TPSLRawDataSimulator
             public int I1 { get; set; }
             public uint U2;
 
+        }
+
+        [StructToRaw(Endian = Endian.BigEndian)]
+        public struct testArray
+        {
+
+            public int[] IA1 { get; set; }
+
+            [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.I1)]
+            public uint[] UA2;
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi, Pack = 1)]

@@ -23,6 +23,8 @@ namespace TPSLRawDataSimulator
         public void Serialize(Stream serializationStream, object graph)
         {
             var type = graph.GetType();
+            var structToRaw = type.GetCustomAttribute<StructToRawAttribute>();
+
             Func<object, byte[]> func = null;
             if (!ExpressionStorage.TryGetValue(type, out func))
             {
@@ -39,12 +41,28 @@ namespace TPSLRawDataSimulator
                     var marshal = propertyInfo.GetCustomAttributes<MarshalAsAttribute>().SingleOrDefault();
                     if (propertyInfo.FieldType.IsArray)
                     {
-                       
+
                         if (marshal != null)
                         {
                             if (marshal.Value == UnmanagedType.ByValArray)
                             {
-                                var subType = marshal.ArraySubType;
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange")
+                                    , Expression.Call(null, typeof(BytesHelper).GetMethod("ArrayToBytes", BindingFlags.Public | BindingFlags.Static, Type.DefaultBinder, new[] { typeof(Array), typeof(UnmanagedType), typeof(bool) }, null)
+                                    , Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name)
+                                    , Expression.Constant(marshal.ArraySubType)
+                                    , Expression.Constant(structToRaw.Endian == Endian.BigEndian)
+                                    )
+                                    ));
+
+                                //if (marshal.ArraySubType == UnmanagedType.I1 || marshal.ArraySubType == UnmanagedType.U1)
+                                //{
+                                //    inBlockExpressions.Add(ExpressionHelper.ExpForEach(
+
+                                //        , Expression.Parameter(propertyInfo.FieldType.GetElementType(), "current")
+                                //        , Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("Add"), Expression.Convert(Expression.Parameter(propertyInfo.FieldType.GetElementType(), "current"), typeof(byte)))));
+                                //        , Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("Add"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(byte) }, null), Expression.Convert(Expression.Parameter(propertyInfo.FieldType.GetElementType(), "current"), typeof(byte))))));
+
+                                //}
                             }
                         }
                         else
@@ -62,9 +80,9 @@ namespace TPSLRawDataSimulator
                         //                        }
                         if (marshal != null)
                         {
-                            if (marshal.Value == UnmanagedType.U1||marshal.Value == UnmanagedType.I1)
+                            if (marshal.Value == UnmanagedType.U1 || marshal.Value == UnmanagedType.I1)
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("Add"), Expression.ConvertChecked(Expression.PropertyOrField(Expression.Parameter(type, "unBoxedDataObject"), propertyInfo.Name),typeof(byte))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("Add"), Expression.ConvertChecked(Expression.PropertyOrField(Expression.Parameter(type, "unBoxedDataObject"), propertyInfo.Name), typeof(byte))));
                             }
                             if (marshal.Value == UnmanagedType.U2 || marshal.Value == UnmanagedType.I2)
                             {
@@ -139,7 +157,7 @@ namespace TPSLRawDataSimulator
                                 inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(decimal) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
                             }
                         }
-                       
+
                     }
 
                 }
@@ -158,7 +176,7 @@ namespace TPSLRawDataSimulator
         public ISurrogateSelector SurrogateSelector { get; set; }
 
 
-        
+
     }
 
 
