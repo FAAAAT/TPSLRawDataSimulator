@@ -29,7 +29,13 @@ namespace UnitTestProject1
         public void TestMethod2() {
             var bytes = new byte[] { 0xFF, 0x00, 0x00, 0xF0 };
             var result = BitConverter.ToInt16(bytes);
+            var a = BitConverter.GetBytes(0xF001);
+            foreach (var i in a) {
+                Trace.Write(Convert.ToString(i, 2)+',');
+            }
             Assert.AreEqual(result, 0xFF);
+
+            
         }
     }
 }

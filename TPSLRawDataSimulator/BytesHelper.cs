@@ -41,8 +41,8 @@ namespace TPSLRawDataSimulator
             IntPtr structPtr = default(IntPtr);
             //将结构体拷到分配好的内存空间
             if (arrayObject.GetType() == typeof(int[]))
-            { 
-                obj = (int[]) arrayObject;
+            {
+                obj = (int[])arrayObject;
                 length = obj.Length;
                 size = obj.Length * sizeof(int);
                 //创建byte数组
@@ -170,18 +170,20 @@ namespace TPSLRawDataSimulator
             return bytes;
         }
 
-        public static byte[] ArrayToBytes(Array arrayObject, UnmanagedType elementType,bool isBigEndian) {
+        public static byte[] ArrayToBytes(Array arrayObject, UnmanagedType elementType, bool isResultBigEndian)
+        {
             List<byte> result = new List<byte>();
-            foreach (var element in arrayObject) {
+            foreach (var element in arrayObject)
+            {
                 if (elementType == UnmanagedType.I1 || elementType == UnmanagedType.U1)
-                    result.Add(isBigEndian? BytesHelper.GetBytes(element).First(): BytesHelper.GetBytes(element).Last());
-                    //result.Add(unchecked(Convert.ToByte(element)));
+                    result.Add(BitConverter.IsLittleEndian ? BytesHelper.GetBytes(element).First() : BytesHelper.GetBytes(element).Last());
+                //result.Add(unchecked(Convert.ToByte(element)));
                 if (elementType == UnmanagedType.I2 || elementType == UnmanagedType.U2)
-                    result.AddRange(BytesHelper.GetBytes(element));
+                    result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element), 2, !BitConverter.IsLittleEndian, isResultBigEndian));
                 if (elementType == UnmanagedType.I4 || elementType == UnmanagedType.U4)
-                    result.AddRange(BytesHelper.GetBytes(element));
+                    result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element), 4, !BitConverter.IsLittleEndian, isResultBigEndian));
                 if (elementType == UnmanagedType.I8 || elementType == UnmanagedType.U8)
-                    result.AddRange(BytesHelper.GetBytes(element));
+                    result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element), 8, !BitConverter.IsLittleEndian, isResultBigEndian));
             }
             return result.ToArray();
         }
@@ -234,7 +236,7 @@ namespace TPSLRawDataSimulator
                 case UnmanagedType.U8:
                 case UnmanagedType.R8:
                     return 8;
-                
+
                 default:
                     return -1;
             }
@@ -245,9 +247,11 @@ namespace TPSLRawDataSimulator
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public static byte[] GetBytes(object obj) {
+        public static byte[] GetBytes(object obj)
+        {
             var objType = obj.GetType();
-            if (objType == typeof(int)) {
+            if (objType == typeof(int))
+            {
                 return BitConverter.GetBytes((int)obj);
             }
             if (objType == typeof(uint))
@@ -291,10 +295,11 @@ namespace TPSLRawDataSimulator
         }
 
 
-        public static object GetTypedObjectFromBytes(byte[] bytes, Type objType,bool isBigEndian)
+        public static object GetTypedObjectFromBytes(byte[] bytes, Type objType, bool isBigEndian)
         {
             var bytesMustReverse = BitConverter.IsLittleEndian == isBigEndian;
-            if (bytesMustReverse) {
+            if (bytesMustReverse)
+            {
                 bytes = bytes.Reverse().ToArray();
             }
             if (objType == typeof(int))
@@ -307,7 +312,7 @@ namespace TPSLRawDataSimulator
             }
             if (objType == typeof(byte))
             {
-                return !BitConverter.IsLittleEndian ? bytes.First(): bytes.Last();
+                return !BitConverter.IsLittleEndian ? bytes.First() : bytes.Last();
             }
             if (objType == typeof(sbyte))
             {
@@ -342,6 +347,32 @@ namespace TPSLRawDataSimulator
         }
 
         /// <summary>
+        /// Get byte[Count] from source bytes depends on both side endian. 
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="byteCount"></param>
+        /// <param name="sourceBigEndian"></param>
+        /// <param name="targetBigEndian"></param>
+        /// <returns></returns>
+        public static byte[] GetBytesDependOnEndian(byte[] bytes, int byteCount, bool sourceBigEndian, bool targetBigEndian)
+        {
+            var result = new byte[byteCount];
+
+            for (var i = 0; i < byteCount; i++)
+            {
+                if (sourceBigEndian && targetBigEndian)
+                    result[byteCount - i - 1] = bytes[bytes.Length - i - 1];
+                if (sourceBigEndian && !targetBigEndian)
+                    result[i] = bytes[bytes.Length - i - 1];
+                if (!sourceBigEndian && targetBigEndian)
+                    result[byteCount - i - 1] = bytes[i];
+                if (!sourceBigEndian && !targetBigEndian)
+                    result[i] = bytes[i];
+            }
+            return result;
+        }
+
+        /// <summary>
         /// this method is for unboxing a object.
         /// if you unbox a object to another type instead of its origin type, you will get an exception.
         /// </summary>
@@ -358,13 +389,15 @@ namespace TPSLRawDataSimulator
         //}
     }
 
-    public enum Endian {
+    public enum Endian
+    {
         BigEndian,
         LittleEndian
     }
 
-    [AttributeUsage(AttributeTargets.Struct,AllowMultiple =false,Inherited =false)]
-    public class StructToRawAttribute:Attribute {
+    [AttributeUsage(AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+    public class StructToRawAttribute : Attribute
+    {
         public Endian Endian { get; set; }
     }
 }

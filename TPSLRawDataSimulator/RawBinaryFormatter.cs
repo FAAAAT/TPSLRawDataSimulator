@@ -75,7 +75,7 @@ namespace TPSLRawDataSimulator
                         }
                         else
                         {
-                            inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BytesHelper).GetMethod("ArrayToBytes", BindingFlags.Public | BindingFlags.Static, Type.DefaultBinder, new[] { typeof(Array), typeof(UnmanagedType), typeof(bool) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name),Expression.Constant(null), Expression.Constant(structToRaw == null || structToRaw.Endian == Endian.BigEndian))));
+                            inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BytesHelper).GetMethod("ArrayToBytes", BindingFlags.Public | BindingFlags.Static, Type.DefaultBinder, new[] { typeof(object) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                         }
                     }
                     else
