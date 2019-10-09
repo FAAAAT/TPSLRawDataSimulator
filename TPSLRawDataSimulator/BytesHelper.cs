@@ -27,6 +27,11 @@ namespace TPSLRawDataSimulator
             return bytes;
         }
 
+        /// <summary>
+        /// this method 's endian is depending bitconverter.IsLittleEndian.
+        /// </summary>
+        /// <param name="arrayObject"></param>
+        /// <returns></returns>
         public static byte[] ArrayToBytes(object arrayObject)
         {
             var size = -1;
@@ -288,6 +293,10 @@ namespace TPSLRawDataSimulator
 
         public static object GetTypedObjectFromBytes(byte[] bytes, Type objType,bool isBigEndian)
         {
+            var bytesMustReverse = BitConverter.IsLittleEndian == isBigEndian;
+            if (bytesMustReverse) {
+                bytes = bytes.Reverse().ToArray();
+            }
             if (objType == typeof(int))
             {
                 return BitConverter.ToInt32(bytes);
@@ -298,11 +307,11 @@ namespace TPSLRawDataSimulator
             }
             if (objType == typeof(byte))
             {
-                return isBigEndian?bytes.First(): bytes.Last();
+                return !BitConverter.IsLittleEndian ? bytes.First(): bytes.Last();
             }
             if (objType == typeof(sbyte))
             {
-                return (sbyte)(isBigEndian ? bytes.First() : bytes.Last());
+                return (sbyte)(!BitConverter.IsLittleEndian ? bytes.First() : bytes.Last());
             }
             if (objType == typeof(short))
             {

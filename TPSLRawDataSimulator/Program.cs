@@ -45,7 +45,7 @@ namespace TPSLRawDataSimulator
             foreach (var memberInfo in typeof(test).GetMembers(BindingFlags.Public | BindingFlags.Instance))
             {
                 if (((int)(memberInfo.MemberType & (MemberTypes.Field | MemberTypes.Property))) != 0)
-                    Console.WriteLine(memberInfo.Name);
+                    Console.WriteLine(memberInfo.Name+"|"+memberInfo.DeclaringType);
             }
             Console.WriteLine("------------------------");
 

@@ -28,7 +28,7 @@ namespace TPSLRawDataSimulator
             Func<object, byte[]> func = null;
             if (!ExpressionStorage.TryGetValue(type, out func))
             {
-                var pInfos = graph.GetType().GetFields();
+                var pInfos = graph.GetType().GetMembers(BindingFlags.Public|BindingFlags.Instance);
                 List<Expression> inBlockExpressions = new List<Expression>();
                 var variableExp = Expression.Variable(typeof(List<>).MakeGenericType(typeof(byte)), "buffer");
                 var unBoxedDataObjectExp = Expression.Variable(graph.GetType(), "unBoxedDataObject");
@@ -36,10 +36,18 @@ namespace TPSLRawDataSimulator
                 inBlockExpressions.Add(Expression.Assign(unBoxedDataObjectExp, Expression.Constant(graph, type)));
                 //                inBlockExpressions.Add(variableExp);
                 inBlockExpressions.Add(Expression.Assign(variableExp, Expression.New(typeof(List<byte>).GetConstructor(Type.EmptyTypes))));
-                foreach (var propertyInfo in pInfos)
+                foreach (var memberInfo in pInfos)
                 {
-                    var marshal = propertyInfo.GetCustomAttributes<MarshalAsAttribute>().SingleOrDefault();
-                    if (propertyInfo.FieldType.IsArray)
+                    Type memberReturnType = null;
+                    if ((memberInfo.MemberType & MemberTypes.Field) == MemberTypes.Field)
+                        memberReturnType = (memberInfo as FieldInfo).FieldType;
+                    else if ((memberInfo.MemberType & MemberTypes.Property) == MemberTypes.Property)
+                        memberReturnType = (memberInfo as PropertyInfo).PropertyType;
+                    else 
+                        continue;
+                    
+                    var marshal = memberInfo.GetCustomAttributes<MarshalAsAttribute>().SingleOrDefault();
+                    if (memberReturnType.IsArray)
                     {
 
                         if (marshal != null)
@@ -48,9 +56,9 @@ namespace TPSLRawDataSimulator
                             {
                                 inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange")
                                     , Expression.Call(null, typeof(BytesHelper).GetMethod("ArrayToBytes", BindingFlags.Public | BindingFlags.Static, Type.DefaultBinder, new[] { typeof(Array), typeof(UnmanagedType), typeof(bool) }, null)
-                                    , Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name)
+                                    , Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name)
                                     , Expression.Constant(marshal.ArraySubType)
-                                    , Expression.Constant(structToRaw.Endian == Endian.BigEndian)
+                                    , Expression.Constant(structToRaw == null || structToRaw.Endian == Endian.BigEndian)
                                     )
                                     ));
 
@@ -67,7 +75,7 @@ namespace TPSLRawDataSimulator
                         }
                         else
                         {
-                            inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BytesHelper).GetMethod("ArrayToBytes", BindingFlags.Static), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
+                            inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BytesHelper).GetMethod("ArrayToBytes", BindingFlags.Public | BindingFlags.Static, Type.DefaultBinder, new[] { typeof(Array), typeof(UnmanagedType), typeof(bool) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name),Expression.Constant(null), Expression.Constant(structToRaw == null || structToRaw.Endian == Endian.BigEndian))));
                         }
                     }
                     else
@@ -82,27 +90,27 @@ namespace TPSLRawDataSimulator
                         {
                             if (marshal.Value == UnmanagedType.U1 || marshal.Value == UnmanagedType.I1)
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("Add"), Expression.ConvertChecked(Expression.PropertyOrField(Expression.Parameter(type, "unBoxedDataObject"), propertyInfo.Name), typeof(byte))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("Add"), Expression.ConvertChecked(Expression.PropertyOrField(Expression.Parameter(type, "unBoxedDataObject"), memberInfo.Name), typeof(byte))));
                             }
                             if (marshal.Value == UnmanagedType.U2 || marshal.Value == UnmanagedType.I2)
                             {
                                 var tempConvertType = typeof(short);
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { tempConvertType }, null), Expression.ConvertChecked(Expression.PropertyOrField(Expression.Parameter(type, "unBoxedDataObject"), propertyInfo.Name), tempConvertType))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { tempConvertType }, null), Expression.ConvertChecked(Expression.PropertyOrField(Expression.Parameter(type, "unBoxedDataObject"), memberInfo.Name), tempConvertType))));
                             }
                             if (marshal.Value == UnmanagedType.U4 || marshal.Value == UnmanagedType.I4)
                             {
                                 var tempConvertType = typeof(int);
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { tempConvertType }, null), Expression.ConvertChecked(Expression.PropertyOrField(Expression.Parameter(type, "unBoxedDataObject"), propertyInfo.Name), tempConvertType))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { tempConvertType }, null), Expression.ConvertChecked(Expression.PropertyOrField(Expression.Parameter(type, "unBoxedDataObject"), memberInfo.Name), tempConvertType))));
                             }
                             if (marshal.Value == UnmanagedType.U8 || marshal.Value == UnmanagedType.I8)
                             {
                                 var tempConvertType = typeof(long);
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { tempConvertType }, null), Expression.ConvertChecked(Expression.PropertyOrField(Expression.Parameter(type, "unBoxedDataObject"), propertyInfo.Name), tempConvertType))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { tempConvertType }, null), Expression.ConvertChecked(Expression.PropertyOrField(Expression.Parameter(type, "unBoxedDataObject"), memberInfo.Name), tempConvertType))));
                             }
                         }
                         else
                         {
-                            if (propertyInfo.FieldType == typeof(int))
+                            if (memberReturnType == typeof(int))
                             {
 
                                 inBlockExpressions.Add(
@@ -112,49 +120,49 @@ namespace TPSLRawDataSimulator
                                     , Expression.Call(
                                         null
                                         , typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(int) }, null)
-                                        , Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))
+                                        , Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))
                                     )
                                 );
                             }
-                            if (propertyInfo.FieldType == typeof(uint))
+                            if (memberReturnType == typeof(uint))
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(uint) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(uint) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                             }
-                            if (propertyInfo.FieldType == typeof(short))
+                            if (memberReturnType == typeof(short))
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(short) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(short) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                             }
-                            if (propertyInfo.FieldType == typeof(ushort))
+                            if (memberReturnType == typeof(ushort))
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(ushort) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(ushort) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                             }
-                            if (propertyInfo.FieldType == typeof(long))
+                            if (memberReturnType == typeof(long))
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(long) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(long) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                             }
-                            if (propertyInfo.FieldType == typeof(ulong))
+                            if (memberReturnType == typeof(ulong))
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(ulong) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(ulong) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                             }
-                            if (propertyInfo.FieldType == typeof(char))
+                            if (memberReturnType == typeof(char))
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(char) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(char) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                             }
-                            if (propertyInfo.FieldType == typeof(byte))
+                            if (memberReturnType == typeof(byte))
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("Add"), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name)));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("Add"), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name)));
                             }
-                            if (propertyInfo.FieldType == typeof(float))
+                            if (memberReturnType == typeof(float))
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(float) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(float) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                             }
-                            if (propertyInfo.FieldType == typeof(double))
+                            if (memberReturnType == typeof(double))
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(double) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(double) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                             }
-                            if (propertyInfo.FieldType == typeof(decimal))
+                            if (memberReturnType == typeof(decimal))
                             {
-                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(decimal) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, propertyInfo.Name))));
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(decimal) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                             }
                         }
 
