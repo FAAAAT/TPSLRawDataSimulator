@@ -184,6 +184,10 @@ namespace TPSLRawDataSimulator
                     result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element), 4, !BitConverter.IsLittleEndian, isResultBigEndian));
                 if (elementType == UnmanagedType.I8 || elementType == UnmanagedType.U8)
                     result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element), 8, !BitConverter.IsLittleEndian, isResultBigEndian));
+                if (elementType == UnmanagedType.R4)
+                    throw new NotImplementedException();
+                if (elementType == UnmanagedType.R8)
+                    throw new NotImplementedException();
             }
             return result.ToArray();
         }
@@ -341,6 +345,13 @@ namespace TPSLRawDataSimulator
             if (objType == typeof(bool))
             {
                 return BitConverter.ToBoolean(bytes);
+            }
+            if (objType == typeof(float)) {
+                return BitConverter.ToSingle(bytes);
+            }
+            if(objType == typeof(double))
+            {
+                return BitConverter.ToDouble(bytes);
             }
             throw new NotImplementedException();
 
