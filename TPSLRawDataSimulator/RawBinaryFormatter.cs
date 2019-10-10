@@ -28,7 +28,7 @@ namespace TPSLRawDataSimulator
             Func<object, byte[]> func = null;
             if (!ExpressionStorage.TryGetValue(type, out func))
             {
-                var pInfos = graph.GetType().GetMembers(BindingFlags.Public|BindingFlags.Instance);
+                var pInfos = graph.GetType().GetMembers(BindingFlags.Public|BindingFlags.Instance).Where(x=>(x.MemberType & (MemberTypes.Field|MemberTypes.Property)) != 0).ToList();
                 List<Expression> inBlockExpressions = new List<Expression>();
                 var variableExp = Expression.Variable(typeof(List<>).MakeGenericType(typeof(byte)), "buffer");
                 var unBoxedDataObjectExp = Expression.Variable(graph.GetType(), "unBoxedDataObject");
@@ -36,16 +36,18 @@ namespace TPSLRawDataSimulator
                 inBlockExpressions.Add(Expression.Assign(unBoxedDataObjectExp, Expression.Constant(graph, type)));
                 //                inBlockExpressions.Add(variableExp);
                 inBlockExpressions.Add(Expression.Assign(variableExp, Expression.New(typeof(List<byte>).GetConstructor(Type.EmptyTypes))));
+                pInfos.Sort(new GenericComparer<MemberInfo, int>(x => x.GetCustomAttribute<MemberIndexAttribute>().Index));
                 foreach (var memberInfo in pInfos)
                 {
                     Type memberReturnType = null;
+
                     if ((memberInfo.MemberType & MemberTypes.Field) == MemberTypes.Field)
                         memberReturnType = (memberInfo as FieldInfo).FieldType;
                     else if ((memberInfo.MemberType & MemberTypes.Property) == MemberTypes.Property)
                         memberReturnType = (memberInfo as PropertyInfo).PropertyType;
-                    else 
+                    else
                         continue;
-                    
+
                     var marshal = memberInfo.GetCustomAttributes<MarshalAsAttribute>().SingleOrDefault();
                     if (memberReturnType.IsArray)
                     {
@@ -163,6 +165,10 @@ namespace TPSLRawDataSimulator
                             if (memberReturnType == typeof(decimal))
                             {
                                 inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(decimal) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
+                            }
+                            if (memberReturnType == typeof(bool))
+                            {
+                                inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange"), Expression.Call(null, typeof(BitConverter).GetMethod("GetBytes", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(bool) }, null), Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name))));
                             }
                         }
 

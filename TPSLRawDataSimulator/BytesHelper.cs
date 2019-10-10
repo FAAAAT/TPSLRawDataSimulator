@@ -411,4 +411,10 @@ namespace TPSLRawDataSimulator
     {
         public Endian Endian { get; set; }
     }
+
+    [AttributeUsage(AttributeTargets.Field|AttributeTargets.Property,AllowMultiple = false, Inherited = false)]
+    public class MemberIndexAttribute : Attribute 
+    {
+        public ushort Index { get; set; }
+    }
 }
