@@ -60,7 +60,7 @@ namespace TPSLRawDataSimulator
                                     , Expression.Call(null, typeof(BytesHelper).GetMethod("ArrayToBytes", BindingFlags.Public | BindingFlags.Static, Type.DefaultBinder, new[] { typeof(Array), typeof(UnmanagedType), typeof(bool) }, null)
                                     , Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name)
                                     , Expression.Constant(marshal.ArraySubType)
-                                    , Expression.Constant(structToRaw == null || structToRaw.Endian == Endian.BigEndian)
+                                    , Expression.Constant(structToRaw == null? !BitConverter.IsLittleEndian : structToRaw.TargetEndian == Endian.BigEndian)
                                     )
                                     ));
 

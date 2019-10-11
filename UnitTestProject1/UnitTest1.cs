@@ -68,6 +68,49 @@ namespace UnitTestProject1
             public bool pBool { get; set; }
 
         }
+        public struct ArrayValueObject {
+            [MemberIndex(Index = 10)]
+            public int[] fIntArray;
+            [MemberIndex(Index = 20)]
+            public uint[] fUIntArray;
+            [MemberIndex(Index = 30)]
+            public long[] fLongArray;
+            [MemberIndex(Index = 40)]
+            public ulong[] fULongArray;
+            [MemberIndex(Index = 50)]
+            public short[] fShortArray;
+            [MemberIndex(Index = 60)]
+            public ushort[] fUShortArray;
+            [MemberIndex(Index = 70)]
+            public float[] fFloatArray;
+            [MemberIndex(Index = 80)]
+            public double[] fDoubleArray;
+            [MemberIndex(Index = 90)]
+            public char[] fCharArray;
+            [MemberIndex(Index = 100)]
+            public bool[] fBoolArray;
+
+            [MemberIndex(Index = 110)]
+            public int[] pIntArray { get; set; }
+            [MemberIndex(Index = 120)]
+            public uint[] pUIntArray { get; set; }
+            [MemberIndex(Index = 130)]
+            public long[] pLongArray { get; set; }
+            [MemberIndex(Index = 140)]
+            public ulong[] pULongArray { get; set; }
+            [MemberIndex(Index = 150)]
+            public short[] pShortArray { get; set; }
+            [MemberIndex(Index = 160)]
+            public ushort[] pUShortArray { get; set; }
+            [MemberIndex(Index = 170)]
+            public float[] pFloatArray { get; set; }
+            [MemberIndex(Index = 180)]
+            public double[] pDoubleArray { get; set; }
+            [MemberIndex(Index = 190)]
+            public char[] pCharArray { get; set; }
+            [MemberIndex(Index = 200)]
+            public bool[] pBoolArray { get; set; }
+        }
 
         public NormalValueObject InitATestPureValueObject() {
             NormalValueObject obj = new NormalValueObject();
@@ -97,6 +140,33 @@ namespace UnitTestProject1
             return obj;
         }
 
+        public ArrayValueObject InitATestArrayValueObject() {
+            var result = new ArrayValueObject();
+            result.fIntArray = new int[] { 0x11111110, 0x22222220, 0x33333330, 0x44444440, 0x55555550 };
+            result.fUIntArray = new uint[] { 0x11111111, 0x22222221, 0x33333331, 0x44444441, 0x55555551 };
+            result.fLongArray = new long[] { 0x111111111111110, 0x2222222222222220, 0x3333333333333330, 0x4444444444444440, 0x5555555555555550 };
+            result.fULongArray = new ulong[] { 0x111111111111111, 0x2222222222222221, 0x3333333333333331, 0x4444444444444441, 0x5555555555555551 };
+            result.fShortArray = new short[] { 0x1110, 0x2220, 0x3330, 0x4440, 0x5550 };
+            result.fUShortArray = new ushort[] { 0x1110, 0x2220, 0x3330, 0x4440, 0x5550 };
+            result.fFloatArray = new float[] { 1235.5f };
+            result.fDoubleArray = new double[] { 12345.5d };
+            result.fCharArray = "abcde".ToArray();
+            result.fBoolArray = new bool[] { true, false, true, false };
+
+            result.pIntArray = new int[] { 0x11111110, 0x22222220, 0x33333330, 0x44444440, 0x55555550 };
+            result.pUIntArray = new uint[] { 0x11111111, 0x22222221, 0x33333331, 0x44444441, 0x55555551 };
+            result.pLongArray = new long[] { 0x111111111111110, 0x2222222222222220, 0x3333333333333330, 0x4444444444444440, 0x5555555555555550 };
+            result.pULongArray = new ulong[] { 0x111111111111111, 0x2222222222222221, 0x3333333333333331, 0x4444444444444441, 0x5555555555555551 };
+            result.pShortArray = new short[] { 0x1110, 0x2220, 0x3330, 0x4440, 0x5550 };
+            result.pUShortArray = new ushort[] { 0x1110, 0x2220, 0x3330, 0x4440, 0x5550 };
+            result.pFloatArray = new float[] { 1235.5f };
+            result.pDoubleArray = new double[] { 12345.5d };
+            result.pCharArray = "edcba".ToArray();
+            result.pBoolArray = new bool[] { false, true, false, true };
+
+            return result;
+        }
+
         public IEnumerable<byte> GetATestPureValueObjectMemoryLayout()
         {
             List<byte> result = new List<byte>();
@@ -124,6 +194,53 @@ namespace UnitTestProject1
             result.AddRange(BitConverter.GetBytes(resultObj.pBool));
             return result;
 
+        }
+
+        public IEnumerable<byte> GetATestArrayValueObjectMemeryLayout() {
+            var obj = InitATestArrayValueObject();
+            List<byte> result = new List<byte>();
+            foreach (var i in obj.fIntArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.fUIntArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.fLongArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.fULongArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.fShortArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.fUShortArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.fFloatArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.fDoubleArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.fCharArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.fBoolArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+
+            foreach (var i in obj.pIntArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.pUIntArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.pLongArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.pULongArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.pShortArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.pUShortArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.pFloatArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.pDoubleArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.pCharArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            foreach (var i in obj.pBoolArray.Select(x => BitConverter.GetBytes(x)))
+                result.AddRange(i);
+            return result;
         }
 
         [TestMethod]
@@ -158,6 +275,17 @@ namespace UnitTestProject1
             var expected = GetATestPureValueObjectMemoryLayout();
             Assert.IsTrue(Enumerable.SequenceEqual<byte>(buffer, expected));
 
+        }
+
+        [TestMethod]
+        public void TestArrayValueObjectSerializeInStruct() {
+            var obj = InitATestArrayValueObject();
+            RawBinaryFormatter formatter = new RawBinaryFormatter();
+            var mStream = new MemoryStream();
+            formatter.Serialize(mStream, obj);
+            var buffer = mStream.ToArray();
+            var expected = GetATestArrayValueObjectMemeryLayout();
+            Assert.IsTrue(Enumerable.SequenceEqual<byte>(buffer, expected));
         }
        
     }

@@ -161,11 +161,18 @@ namespace TPSLRawDataSimulator
                 Marshal.Copy((byte[])obj, 0, structPtr, length);
 
             }
+            if (arrayObject.GetType() == typeof(bool[]))
+            {
+                bytes = ArrayToBytes((bool[])arrayObject, UnmanagedType.I1, !BitConverter.IsLittleEndian);
+            }
 
-            //从内存空间拷到byte数组
-            Marshal.Copy(structPtr, bytes, 0, size);
-            //释放内存空间
-            Marshal.FreeHGlobal(structPtr);
+            if (structPtr != default(IntPtr))
+            {
+                //从内存空间拷到byte数组
+                Marshal.Copy(structPtr, bytes, 0, size);
+                //释放内存空间
+                Marshal.FreeHGlobal(structPtr); 
+            }
             //返回byte数组
             return bytes;
         }
@@ -176,14 +183,14 @@ namespace TPSLRawDataSimulator
             foreach (var element in arrayObject)
             {
                 if (elementType == UnmanagedType.I1 || elementType == UnmanagedType.U1)
-                    result.Add(BitConverter.IsLittleEndian ? BytesHelper.GetBytes(element).First() : BytesHelper.GetBytes(element).Last());
+                    result.Add(BitConverter.IsLittleEndian ? BytesHelper.GetBytes(element, isResultBigEndian).First() : BytesHelper.GetBytes(element, isResultBigEndian).Last());
                 //result.Add(unchecked(Convert.ToByte(element)));
                 if (elementType == UnmanagedType.I2 || elementType == UnmanagedType.U2)
-                    result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element), 2, !BitConverter.IsLittleEndian, isResultBigEndian));
+                    result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element, isResultBigEndian), 2, !BitConverter.IsLittleEndian, isResultBigEndian));
                 if (elementType == UnmanagedType.I4 || elementType == UnmanagedType.U4)
-                    result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element), 4, !BitConverter.IsLittleEndian, isResultBigEndian));
+                    result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element, isResultBigEndian), 4, !BitConverter.IsLittleEndian, isResultBigEndian));
                 if (elementType == UnmanagedType.I8 || elementType == UnmanagedType.U8)
-                    result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element), 8, !BitConverter.IsLittleEndian, isResultBigEndian));
+                    result.AddRange(GetBytesDependOnEndian(BytesHelper.GetBytes(element, isResultBigEndian), 8, !BitConverter.IsLittleEndian, isResultBigEndian));
                 if (elementType == UnmanagedType.R4)
                     throw new NotImplementedException();
                 if (elementType == UnmanagedType.R8)
@@ -251,51 +258,58 @@ namespace TPSLRawDataSimulator
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public static byte[] GetBytes(object obj)
+        public static byte[] GetBytes(object obj,bool isTargetBigEndian)
         {
             var objType = obj.GetType();
-            if (objType == typeof(int))
-            {
-                return BitConverter.GetBytes((int)obj);
-            }
-            if (objType == typeof(uint))
-            {
-                var result = BitConverter.GetBytes((uint)obj);
-                return result;
-            }
+            var shouldReverseResult = isTargetBigEndian == BitConverter.IsLittleEndian;
+            byte[] result = null;
             if (objType == typeof(byte))
             {
                 return new[] { (byte)obj };
             }
+            if (objType == typeof(int))
+            {
+                result = BitConverter.GetBytes((int)obj);
+            }
+            if (objType == typeof(uint))
+            {
+                result = BitConverter.GetBytes((uint)obj);
+            }
             if (objType == typeof(sbyte))
             {
-                return BitConverter.GetBytes((sbyte)obj);
+                result = BitConverter.GetBytes((sbyte)obj);
             }
             if (objType == typeof(short))
             {
-                return BitConverter.GetBytes((short)obj);
+                result = BitConverter.GetBytes((short)obj);
             }
             if (objType == typeof(ushort))
             {
-                return BitConverter.GetBytes((ushort)obj);
+                result = BitConverter.GetBytes((ushort)obj);
             }
             if (objType == typeof(long))
             {
-                return BitConverter.GetBytes((long)obj);
+                result = BitConverter.GetBytes((long)obj);
             }
             if (objType == typeof(ulong))
             {
-                return BitConverter.GetBytes((ulong)obj);
+                result = BitConverter.GetBytes((ulong)obj);
             }
             if (objType == typeof(char))
             {
-                return BitConverter.GetBytes((char)obj);
+                result = BitConverter.GetBytes((char)obj);
             }
             if (objType == typeof(bool))
             {
-                return BitConverter.GetBytes((bool)obj);
+                result = BitConverter.GetBytes((bool)obj);
             }
-            throw new NotImplementedException();
+            if (result == null)
+                throw new NotImplementedException();
+            if (shouldReverseResult)
+                result = result.Reverse().ToArray();
+            return result;
+
+
         }
 
 
@@ -346,10 +360,11 @@ namespace TPSLRawDataSimulator
             {
                 return BitConverter.ToBoolean(bytes);
             }
-            if (objType == typeof(float)) {
+            if (objType == typeof(float))
+            {
                 return BitConverter.ToSingle(bytes);
             }
-            if(objType == typeof(double))
+            if (objType == typeof(double))
             {
                 return BitConverter.ToDouble(bytes);
             }
@@ -409,11 +424,11 @@ namespace TPSLRawDataSimulator
     [AttributeUsage(AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
     public class StructToRawAttribute : Attribute
     {
-        public Endian Endian { get; set; }
+        public Endian TargetEndian { get; set; }
     }
 
-    [AttributeUsage(AttributeTargets.Field|AttributeTargets.Property,AllowMultiple = false, Inherited = false)]
-    public class MemberIndexAttribute : Attribute 
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+    public class MemberIndexAttribute : Attribute
     {
         public ushort Index { get; set; }
     }
