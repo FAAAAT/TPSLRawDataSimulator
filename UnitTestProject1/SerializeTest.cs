@@ -7,11 +7,12 @@ using System.IO;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace UnitTestProject1
 {
     [TestClass]
-    public class UnitTest1
+    public class SerializeTest
     {
         public struct testArray
         {
@@ -19,7 +20,6 @@ namespace UnitTestProject1
             public int[] IA1 { get; set; }
             public uint[] UA2;
         }
-
         public struct NormalValueObject {
             [MemberIndex(Index = 10)]
             public int fInt;
@@ -112,6 +112,77 @@ namespace UnitTestProject1
             public bool[] pBoolArray { get; set; }
         }
 
+        [StructToRaw(Endian = Endian.BigEndian)]
+        public struct ArrayValueSpecifiedEndianObject
+        {
+            [MemberIndex(Index = 10)]
+            public int[] fIntArray;
+            [MemberIndex(Index = 20)]
+            public uint[] fUIntArray;
+            [MemberIndex(Index = 30)]
+            public long[] fLongArray;
+            [MemberIndex(Index = 40)]
+            public ulong[] fULongArray;
+            [MemberIndex(Index = 50)]
+            public short[] fShortArray;
+            [MemberIndex(Index = 60)]
+            public ushort[] fUShortArray;
+            [MemberIndex(Index = 70)]
+            public float[] fFloatArray;
+            [MemberIndex(Index = 80)]
+            public double[] fDoubleArray;
+            [MemberIndex(Index = 90)]
+            public char[] fCharArray;
+            [MemberIndex(Index = 100)]
+            public bool[] fBoolArray;
+
+            [MemberIndex(Index = 110)]
+            public int[] pIntArray { get; set; }
+            [MemberIndex(Index = 120)]
+            public uint[] pUIntArray { get; set; }
+            [MemberIndex(Index = 130)]
+            public long[] pLongArray { get; set; }
+            [MemberIndex(Index = 140)]
+            public ulong[] pULongArray { get; set; }
+            [MemberIndex(Index = 150)]
+            public short[] pShortArray { get; set; }
+            [MemberIndex(Index = 160)]
+            public ushort[] pUShortArray { get; set; }
+            [MemberIndex(Index = 170)]
+            public float[] pFloatArray { get; set; }
+            [MemberIndex(Index = 180)]
+            public double[] pDoubleArray { get; set; }
+            [MemberIndex(Index = 190)]
+            public char[] pCharArray { get; set; }
+            [MemberIndex(Index = 200)]
+            public bool[] pBoolArray { get; set; }
+        }
+
+
+        [StructToRaw(Endian = Endian.BigEndian)]
+        public struct MarshalAs {
+            [MemberIndex(Index = 10)]
+            [MarshalAs(UnmanagedType.U1)]
+            public int fU1;
+            [MemberIndex(Index = 20)]
+            [MarshalAs(UnmanagedType.U2)]
+            public int fU2;
+            [MemberIndex(Index = 30)]
+            [MarshalAs(UnmanagedType.U4)]
+            public int fU4;
+            [MemberIndex(Index = 40)]
+            [MarshalAs(UnmanagedType.U8)]
+            public int fU8;
+            [MemberIndex(Index = 50)]
+            [MarshalAs(UnmanagedType.R4)]
+            public double fR4;
+            [MemberIndex(Index = 60)]
+            [MarshalAs(UnmanagedType.R8)]
+            public double fR8;
+            
+
+        }
+
         public NormalValueObject InitATestPureValueObject() {
             NormalValueObject obj = new NormalValueObject();
             obj.fInt = 0x11111110;
@@ -166,6 +237,35 @@ namespace UnitTestProject1
 
             return result;
         }
+
+        public ArrayValueSpecifiedEndianObject InitATestArraySpecifiedEndianValueObject()
+        {
+            var result = new ArrayValueSpecifiedEndianObject();
+            result.fIntArray = new int[] { 0x11111110, 0x22222220, 0x33333330, 0x44444440, 0x55555550 };
+            result.fUIntArray = new uint[] { 0x11111111, 0x22222221, 0x33333331, 0x44444441, 0x55555551 };
+            result.fLongArray = new long[] { 0x111111111111110, 0x2222222222222220, 0x3333333333333330, 0x4444444444444440, 0x5555555555555550 };
+            result.fULongArray = new ulong[] { 0x111111111111111, 0x2222222222222221, 0x3333333333333331, 0x4444444444444441, 0x5555555555555551 };
+            result.fShortArray = new short[] { 0x1110, 0x2220, 0x3330, 0x4440, 0x5550 };
+            result.fUShortArray = new ushort[] { 0x1110, 0x2220, 0x3330, 0x4440, 0x5550 };
+            result.fFloatArray = new float[] { 1235.5f };
+            result.fDoubleArray = new double[] { 12345.5d };
+            result.fCharArray = "abcde".ToArray();
+            result.fBoolArray = new bool[] { true, false, true, false };
+
+            result.pIntArray = new int[] { 0x11111110, 0x22222220, 0x33333330, 0x44444440, 0x55555550 };
+            result.pUIntArray = new uint[] { 0x11111111, 0x22222221, 0x33333331, 0x44444441, 0x55555551 };
+            result.pLongArray = new long[] { 0x111111111111110, 0x2222222222222220, 0x3333333333333330, 0x4444444444444440, 0x5555555555555550 };
+            result.pULongArray = new ulong[] { 0x111111111111111, 0x2222222222222221, 0x3333333333333331, 0x4444444444444441, 0x5555555555555551 };
+            result.pShortArray = new short[] { 0x1110, 0x2220, 0x3330, 0x4440, 0x5550 };
+            result.pUShortArray = new ushort[] { 0x1110, 0x2220, 0x3330, 0x4440, 0x5550 };
+            result.pFloatArray = new float[] { 1235.5f };
+            result.pDoubleArray = new double[] { 12345.5d };
+            result.pCharArray = "edcba".ToArray();
+            result.pBoolArray = new bool[] { false, true, false, true };
+
+            return result;
+        }
+
 
         public IEnumerable<byte> GetATestPureValueObjectMemoryLayout()
         {
@@ -243,6 +343,54 @@ namespace UnitTestProject1
             return result;
         }
 
+        public IEnumerable<byte> GetATestArrayValueObjectMemeryLayoutBigEndian()
+        {
+            var obj = InitATestArrayValueObject();
+            List<byte> result = new List<byte>();
+            foreach (var i in obj.fIntArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.fUIntArray.Select(x => BytesHelper.GetBytes(x, true)))
+                result.AddRange(i);
+            foreach (var i in obj.fLongArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.fULongArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.fShortArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.fUShortArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.fFloatArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.fDoubleArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.fCharArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.fBoolArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+
+            foreach (var i in obj.pIntArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.pUIntArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.pLongArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.pULongArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.pShortArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.pUShortArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.pFloatArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.pDoubleArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.pCharArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            foreach (var i in obj.pBoolArray.Select(x => BytesHelper.GetBytes(x,true)))
+                result.AddRange(i);
+            return result;
+        }
+
         [TestMethod]
         public void TestMethod1()
         {
@@ -287,6 +435,41 @@ namespace UnitTestProject1
             var expected = GetATestArrayValueObjectMemeryLayout();
             Assert.IsTrue(Enumerable.SequenceEqual<byte>(buffer, expected));
         }
-       
+
+        [TestMethod]
+        public void Test_BytesHelper_GetBytes() {
+            var result = BytesHelper.GetBytes(0x04030201, true);
+            Assert.IsTrue(Enumerable.SequenceEqual(new byte[] { 4, 3, 2, 1 }, result));
+            Assert.IsTrue(Enumerable.SequenceEqual(new byte[] { 1, 2, 3, 4 }, BytesHelper.GetBytes(0x04030201, false)));
+        }
+        [TestMethod]
+        public void TestMarshal() {
+            RawBinaryFormatter formatter = new RawBinaryFormatter();
+            MemoryStream ms = new MemoryStream();
+            var marshalas = new MarshalAs() {
+                fU1 = 0x01020304,
+                fU2 = 0x01020304,
+                fU4 = 0x01020304,
+                fU8 = 0x01020304,
+                fR4 = 1566.71,
+                fR8 = 1587.22,
+            
+            };
+            formatter.Serialize(ms, marshalas);
+            var buffer = ms.ToArray();
+            Assert.IsTrue(Enumerable.SequenceEqual(new byte[] {4, 3, 4,1,2,3,4,0,0,0,0,1,2,3,4, 0x44,0xC3,0xD6,0xB8, 0x40,0x98,0xCC,0xE1,0x47,0xAE,0x14,0x7B }, buffer
+                ));
+        }
+        [TestMethod]
+        public void Test_ArrayValueSpecifiedEndianObject() {
+            var obj = InitATestArraySpecifiedEndianValueObject();
+            RawBinaryFormatter formatter = new RawBinaryFormatter();
+            var mStream = new MemoryStream();
+            formatter.Serialize(mStream, obj);
+            var buffer = mStream.ToArray();
+            var expected = GetATestArrayValueObjectMemeryLayoutBigEndian();
+            Assert.IsTrue(Enumerable.SequenceEqual<byte>(buffer, expected));
+        }
+
     }
 }

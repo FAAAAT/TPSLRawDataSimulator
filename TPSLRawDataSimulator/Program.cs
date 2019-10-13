@@ -75,7 +75,7 @@ namespace TPSLRawDataSimulator
 
         }
 
-        [StructToRaw(TargetEndian = Endian.BigEndian)]
+        [StructToRaw(Endian = Endian.BigEndian)]
         public struct testArray
         {
 
