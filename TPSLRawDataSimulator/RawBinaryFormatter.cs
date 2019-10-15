@@ -12,12 +12,37 @@ using System.Text;
 
 namespace TPSLRawDataSimulator
 {
-    public class RawBinaryFormatter : IFormatter
+    public class RawBinaryFormatter
     {
         private ConcurrentDictionary<Type, Func<object, byte[]>> ExpressionStorage = new ConcurrentDictionary<Type, Func<object, byte[]>>();
-        public object Deserialize(Stream serializationStream)
+        private ConcurrentDictionary<Type, Func<Stream,object>> DeserializeExpressionStorage = new ConcurrentDictionary<Type, Func<Stream,object>>();
+        public object Deserialize(Stream serializationStream, Type type)
         {
-            throw new NotImplementedException();
+            var structToRaw = type.GetCustomAttribute<StructToRawAttribute>();
+            Func<Stream, object> func = null;
+            if (!this.DeserializeExpressionStorage.TryGetValue(type, out func))
+            {
+
+                var mInfos = type.GetMembers(BindingFlags.Public | BindingFlags.Instance).Where(x => (x.MemberType & (MemberTypes.Field | MemberTypes.Property)) != 0).ToList();
+                mInfos.Sort(new GenericComparer<MemberInfo, int>(x => x.GetCustomAttribute<MemberIndexAttribute>().Index));
+
+                List<Expression> inBlockExpressions = new List<Expression>();
+                var variableExp = Expression.Variable(typeof(Stream), "stream");
+                var returnObjExp = Expression.Variable(typeof(object), "returnObj");
+                var variantLength
+                
+                foreach (MemberInfo mInfo in mInfos) {
+                    if (mInfo.GetCustomAttribute<MemberIndexAttribute>().LengthTo is string mName && !string.IsNullOrEmpty(mName)) {
+                        var length = -1;
+                        if (mInfo.MemberType == MemberTypes.Property)
+                            length = (mInfo as PropertyInfo).GetValue();
+                        variantLengthMembersLMap.Add(mName,);
+                    }
+                }
+                Expression.Lambda(Expression.Block(new[] { returnObjExp },inBlockExpressions), new[] { variableExp });
+            }
+            var result = func.Invoke(serializationStream);
+            return result;
         }
 
         public void Serialize(Stream serializationStream, object graph)
@@ -28,13 +53,14 @@ namespace TPSLRawDataSimulator
             Func<object, byte[]> func = null;
             if (!ExpressionStorage.TryGetValue(type, out func))
             {
-                var pInfos = graph.GetType().GetMembers(BindingFlags.Public|BindingFlags.Instance).Where(x=>(x.MemberType & (MemberTypes.Field|MemberTypes.Property)) != 0).ToList();
+                var pInfos = graph.GetType().GetMembers(BindingFlags.Public | BindingFlags.Instance).Where(x => (x.MemberType & (MemberTypes.Field | MemberTypes.Property)) != 0).ToList();
                 List<Expression> inBlockExpressions = new List<Expression>();
                 var variableExp = Expression.Variable(typeof(List<>).MakeGenericType(typeof(byte)), "buffer");
                 var unBoxedDataObjectExp = Expression.Variable(graph.GetType(), "unBoxedDataObject");
-                //                inBlockExpressions.Add(Expression.Assign(unBoxedDataObjectExp,Expression.Convert(Expression.Parameter(typeof(object), "dataObject"),type)));
-                inBlockExpressions.Add(Expression.Assign(unBoxedDataObjectExp, Expression.Constant(graph, type)));
-                //                inBlockExpressions.Add(variableExp);
+                var objParam = Expression.Variable(typeof(object), "dataObject");
+
+                inBlockExpressions.Add(Expression.Assign(unBoxedDataObjectExp, Expression.Convert(objParam, type)));
+           
                 inBlockExpressions.Add(Expression.Assign(variableExp, Expression.New(typeof(List<byte>).GetConstructor(Type.EmptyTypes))));
                 pInfos.Sort(new GenericComparer<MemberInfo, int>(x => x.GetCustomAttribute<MemberIndexAttribute>().Index));
                 foreach (var memberInfo in pInfos)
@@ -60,7 +86,7 @@ namespace TPSLRawDataSimulator
                                     , Expression.Call(null, typeof(BytesHelper).GetMethod("ArrayToBytes", BindingFlags.Public | BindingFlags.Static, Type.DefaultBinder, new[] { typeof(Array), typeof(UnmanagedType), typeof(bool) }, null)
                                     , Expression.PropertyOrField(unBoxedDataObjectExp, memberInfo.Name)
                                     , Expression.Constant(marshal.ArraySubType)
-                                    , Expression.Constant(structToRaw == null? !BitConverter.IsLittleEndian : structToRaw.Endian == Endian.BigEndian)
+                                    , Expression.Constant(structToRaw == null ? !BitConverter.IsLittleEndian : structToRaw.Endian == Endian.BigEndian)
                                     )
                                     ));
 
@@ -76,7 +102,7 @@ namespace TPSLRawDataSimulator
                             }
                         }
                         //for array member not indiciated the marshal value, convert them as define type, and the specified endian.
-                        else if(structToRaw != null)
+                        else if (structToRaw != null)
                         {
                             inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("AddRange")
                                     , Expression.Call(null, typeof(BytesHelper).GetMethod("ArrayToBytes", BindingFlags.Public | BindingFlags.Static, Type.DefaultBinder, new[] { typeof(Array), typeof(bool) }, null)
@@ -140,7 +166,7 @@ namespace TPSLRawDataSimulator
 
                 }
                 inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("ToArray")));
-                var exp = Expression.Lambda<Func<object, byte[]>>(Expression.Block(new ParameterExpression[] { variableExp, unBoxedDataObjectExp }, inBlockExpressions), Expression.Parameter(typeof(object), "dataObject"));
+                var exp = Expression.Lambda<Func<object, byte[]>>(Expression.Block(new ParameterExpression[] { variableExp, unBoxedDataObjectExp}, inBlockExpressions), objParam);
                 func = exp.Compile();
                 ExpressionStorage.TryAdd(type, func);
             }
@@ -148,13 +174,6 @@ namespace TPSLRawDataSimulator
             var resultBytes = func.Invoke(graph);
             serializationStream.Write(resultBytes);
         }
-
-        public SerializationBinder Binder { get; set; }
-        public StreamingContext Context { get; set; }
-        public ISurrogateSelector SurrogateSelector { get; set; }
-
-
-
     }
 
 
