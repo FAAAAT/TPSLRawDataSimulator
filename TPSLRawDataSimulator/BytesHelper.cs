@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.IO;
 
 namespace TPSLRawDataSimulator
 {
@@ -382,6 +383,13 @@ namespace TPSLRawDataSimulator
             throw new NotImplementedException();
 
         }
+
+        public static object GetTypedObjectFromStream(Stream stream, Type objType, bool isBigEndian) {
+            var buffer = new byte[GetBytesOfType(objType)];
+            stream.Read(buffer, 0, buffer.Length);
+            return GetTypedObjectFromBytes(buffer, objType, isBigEndian);
+        }
+
 
         /// <summary>
         /// Get byte[Count] from source bytes depends on both side endian. 

@@ -27,19 +27,34 @@ namespace TPSLRawDataSimulator
                 mInfos.Sort(new GenericComparer<MemberInfo, int>(x => x.GetCustomAttribute<MemberIndexAttribute>().Index));
 
                 List<Expression> inBlockExpressions = new List<Expression>();
-                var variableExp = Expression.Variable(typeof(Stream), "stream");
+                var streamVariableExpr = Expression.Variable(typeof(Stream), "stream");
                 var returnObjExp = Expression.Variable(typeof(object), "returnObj");
-                var variantLength
-                
+                var variantLengthVariableParamExprList = new Dictionary<string,ParameterExpression>();
+
+                var getTypedObjFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetTypedObjectFromStream", BindingFlags.Static|BindingFlags.Public,Type.DefaultBinder ,new[] { typeof(Stream), typeof(Type), typeof(bool) },null);
+
                 foreach (MemberInfo mInfo in mInfos) {
+                    Type mType = null;
+                    PropertyInfo pInfo = null;
+                    FieldInfo fInfo = null;
+                    if (mInfo.MemberType == MemberTypes.Property)
+                    {
+                        pInfo = (mInfo as PropertyInfo);
+                        mType = pInfo.PropertyType;
+                    }
+                    else if (mInfo.MemberType == MemberTypes.Field)
+                    {
+                        fInfo = (mInfo as FieldInfo);
+                        mType = fInfo.FieldType;
+
+                    }
                     if (mInfo.GetCustomAttribute<MemberIndexAttribute>().LengthTo is string mName && !string.IsNullOrEmpty(mName)) {
-                        var length = -1;
-                        if (mInfo.MemberType == MemberTypes.Property)
-                            length = (mInfo as PropertyInfo).GetValue();
-                        variantLengthMembersLMap.Add(mName,);
+                        var variablelength = Expression.Variable(mType, mName + "Length");
+                        variantLengthVariableParamExprList.Add(mName+"Length",variablelength);
+                        inBlockExpressions.Add(Expression.Assign(variablelength,Expression.Call(null, getTypedObjFromStreamMethodInfo,streamVariableExpr,Expression.Constant(mType),Expression.Constant(structToRaw.Endian == Endian.BigEndian))));
                     }
                 }
-                Expression.Lambda(Expression.Block(new[] { returnObjExp },inBlockExpressions), new[] { variableExp });
+                Expression.Lambda(Expression.Block(new[] { returnObjExp },inBlockExpressions), new[] { streamVariableExpr });
             }
             var result = func.Invoke(serializationStream);
             return result;
