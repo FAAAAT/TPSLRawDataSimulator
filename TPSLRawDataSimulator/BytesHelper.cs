@@ -391,10 +391,16 @@ namespace TPSLRawDataSimulator
         }
 
         public static Array GetArrayFromStream(Stream stream, Type objType, int lengthInByte, bool isBigEndian) {
-            if (lengthInByte / GetBytesOfType(objType) != 0) {
+            var typeBytes = GetBytesOfType(objType);
+            if (lengthInByte % typeBytes != 0) {
                 throw new ArgumentException($"Element type ${objType.FullName} of array is not fit with the length of bytes ${lengthInByte}");
             }
-
+            var arrayLength = lengthInByte / typeBytes;
+            var result =  Array.CreateInstance(objType, arrayLength);
+            for (var i = 0; i < arrayLength; i++){
+                result.SetValue(GetTypedObjectFromStream(stream, objType, isBigEndian),i);
+            }
+            return result;
         }
 
         /// <summary>
