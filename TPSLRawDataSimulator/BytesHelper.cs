@@ -390,6 +390,12 @@ namespace TPSLRawDataSimulator
             return GetTypedObjectFromBytes(buffer, objType, isBigEndian);
         }
 
+        public static Array GetArrayFromStream(Stream stream, Type objType, int lengthInByte, bool isBigEndian) {
+            if (lengthInByte / GetBytesOfType(objType) != 0) {
+                throw new ArgumentException($"Element type ${objType.FullName} of array is not fit with the length of bytes ${lengthInByte}");
+            }
+
+        }
 
         /// <summary>
         /// Get byte[Count] from source bytes depends on both side endian. 

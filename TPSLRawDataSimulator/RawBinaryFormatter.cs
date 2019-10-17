@@ -46,13 +46,17 @@ namespace TPSLRawDataSimulator
                     {
                         fInfo = (mInfo as FieldInfo);
                         mType = fInfo.FieldType;
-
                     }
                     if (mInfo.GetCustomAttribute<MemberIndexAttribute>().LengthTo is string mName && !string.IsNullOrEmpty(mName)) {
                         var variablelength = Expression.Variable(mType, mName + "Length");
                         variantLengthVariableParamExprList.Add(mName+"Length",variablelength);
                         inBlockExpressions.Add(Expression.Assign(variablelength,Expression.Call(null, getTypedObjFromStreamMethodInfo,streamVariableExpr,Expression.Constant(mType),Expression.Constant(structToRaw.Endian == Endian.BigEndian))));
+                        continue;
                     }
+                    if (mType.IsArray) {
+                        
+                    }
+                    
                 }
                 Expression.Lambda(Expression.Block(new[] { returnObjExp },inBlockExpressions), new[] { streamVariableExpr });
             }
@@ -60,6 +64,12 @@ namespace TPSLRawDataSimulator
             return result;
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="serializationStream"></param>
+        /// <param name="graph"></param>
         public void Serialize(Stream serializationStream, object graph)
         {
             var type = graph.GetType();
