@@ -172,7 +172,7 @@ namespace TPSLRawDataSimulator
                 //从内存空间拷到byte数组
                 Marshal.Copy(structPtr, bytes, 0, size);
                 //释放内存空间
-                Marshal.FreeHGlobal(structPtr); 
+                Marshal.FreeHGlobal(structPtr);
             }
             //返回byte数组
             return bytes;
@@ -199,9 +199,11 @@ namespace TPSLRawDataSimulator
             }
             return result.ToArray();
         }
-        public static byte[] ArrayToBytes(Array arrayObject, bool isResultBigEndian) {
+        public static byte[] ArrayToBytes(Array arrayObject, bool isResultBigEndian)
+        {
             List<byte> result = new List<byte>();
-            foreach (var element in arrayObject) {
+            foreach (var element in arrayObject)
+            {
                 result.AddRange(BytesHelper.GetBytes(element, isResultBigEndian));
             }
             return result.ToArray();
@@ -266,7 +268,7 @@ namespace TPSLRawDataSimulator
         /// </summary>
         /// <param name="obj"></param>
         /// <returns></returns>
-        public static byte[] GetBytes(object obj,bool isTargetBigEndian)
+        public static byte[] GetBytes(object obj, bool isTargetBigEndian)
         {
             var objType = obj.GetType();
             var shouldReverseResult = isTargetBigEndian == BitConverter.IsLittleEndian;
@@ -384,23 +386,52 @@ namespace TPSLRawDataSimulator
 
         }
 
-        public static object GetTypedObjectFromStream(Stream stream, Type objType, bool isBigEndian) {
+        public static object GetTypedObjectFromStream(Stream stream, Type objType, bool isBigEndian)
+        {
             var buffer = new byte[GetBytesOfType(objType)];
             stream.Read(buffer, 0, buffer.Length);
             return GetTypedObjectFromBytes(buffer, objType, isBigEndian);
         }
 
-        public static Array GetArrayFromStream(Stream stream, Type objType, int lengthInByte, bool isBigEndian) {
+        public static Array GetArrayFromStream(Stream stream, Type objType, int lengthInByte, bool isBigEndian)
+        {
             var typeBytes = GetBytesOfType(objType);
-            if (lengthInByte % typeBytes != 0) {
+            if (lengthInByte % typeBytes != 0)
+            {
                 throw new ArgumentException($"Element type ${objType.FullName} of array is not fit with the length of bytes ${lengthInByte}");
             }
             var arrayLength = lengthInByte / typeBytes;
-            var result =  Array.CreateInstance(objType, arrayLength);
-            for (var i = 0; i < arrayLength; i++){
-                result.SetValue(GetTypedObjectFromStream(stream, objType, isBigEndian),i);
+            var result = Array.CreateInstance(objType, arrayLength);
+            for (var i = 0; i < arrayLength; i++)
+            {
+                result.SetValue(GetTypedObjectFromStream(stream, objType, isBigEndian), i);
             }
             return result;
+        }
+
+        public static Array GetArrayFromStream(Stream stream, UnmanagedType marshalAsType, Type objType, int lengthInByte, bool isBigEndian)
+        {
+            var typeBytes = GetBytesOfType(marshalAsType);
+            var typeDeclaredBytes = GetBytesOfType(objType);
+            if (lengthInByte % typeBytes != 0)
+            {
+                throw new ArgumentException($"Element type ${objType.FullName} of array is not fit with the length of bytes ${lengthInByte}");
+            }
+            var arrayLength = lengthInByte / typeBytes;
+            var byteResult = new List<byte>();
+            for (var i = 0; i < arrayLength; i++)
+            {
+                var buffer = new byte[typeBytes];
+                var readed = stream.Read(buffer, 0, buffer.Length);
+                if(readed < buffer.Length)
+                {
+                    throw new InvalidOperationException("stream ending unexpected.");
+                }
+                if (isBigEndian) {
+                    byte[GetBytesOfType(objType)]
+                    byteResult.AddRange()
+                }
+            }
         }
 
         /// <summary>
@@ -429,8 +460,9 @@ namespace TPSLRawDataSimulator
             return result;
         }
 
-        public static byte[] GetBytesDependOnEndian(byte[] bytes, bool sourceBigEndian, bool targetBigEndian) {
-            return GetBytesDependOnEndian(bytes,bytes.Length,sourceBigEndian,targetBigEndian);
+        public static byte[] GetBytesDependOnEndian(byte[] bytes, bool sourceBigEndian, bool targetBigEndian)
+        {
+            return GetBytesDependOnEndian(bytes, bytes.Length, sourceBigEndian, targetBigEndian);
         }
 
         /// <summary>
