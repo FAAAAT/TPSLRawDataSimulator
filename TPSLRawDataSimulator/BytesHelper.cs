@@ -427,9 +427,10 @@ namespace TPSLRawDataSimulator
                 {
                     throw new InvalidOperationException("stream ending unexpected.");
                 }
-                if (isBigEndian) {
-                    byte[GetBytesOfType(objType)]
-                    byteResult.AddRange()
+                if (isBigEndian)
+                {
+                    var temp = new byte[GetBytesOfType(objType)];
+                    byteResult.AddRange(temp);
                 }
             }
         }
