@@ -419,6 +419,9 @@ namespace TPSLRawDataSimulator
             }
             var arrayLength = lengthInByte / typeBytes;
             var byteResult = new List<byte>();
+            //padding 0 for trancatedbytes.
+            var readoffset = isBigEndian ? typeDeclaredBytes - typeBytes : 0;
+            
             for (var i = 0; i < arrayLength; i++)
             {
                 var buffer = new byte[typeBytes];
@@ -427,12 +430,11 @@ namespace TPSLRawDataSimulator
                 {
                     throw new InvalidOperationException("stream ending unexpected.");
                 }
-                if (isBigEndian)
-                {
-                    var temp = new byte[GetBytesOfType(objType)];
-                    byteResult.AddRange(temp);
-                }
+                var temp = new byte[typeDeclaredBytes];
+                stream.Read(temp, readoffset, typeBytes);
+                byteResult.AddRange(temp);
             }
+            return byteResult.ToArray();
         }
 
         /// <summary>

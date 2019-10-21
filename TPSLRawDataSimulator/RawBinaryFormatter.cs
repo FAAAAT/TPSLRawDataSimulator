@@ -15,25 +15,32 @@ namespace TPSLRawDataSimulator
     public class RawBinaryFormatter
     {
         private ConcurrentDictionary<Type, Func<object, byte[]>> ExpressionStorage = new ConcurrentDictionary<Type, Func<object, byte[]>>();
-        private ConcurrentDictionary<Type, Func<Stream,object>> DeserializeExpressionStorage = new ConcurrentDictionary<Type, Func<Stream,object>>();
+        private ConcurrentDictionary<Type, Func<Stream, object>> DeserializeExpressionStorage = new ConcurrentDictionary<Type, Func<Stream, object>>();
         public object Deserialize(Stream serializationStream, Type type)
         {
             var structToRaw = type.GetCustomAttribute<StructToRawAttribute>();
             Func<Stream, object> func = null;
             if (!this.DeserializeExpressionStorage.TryGetValue(type, out func))
             {
-
+                //sort the member info by member index.
                 var mInfos = type.GetMembers(BindingFlags.Public | BindingFlags.Instance).Where(x => (x.MemberType & (MemberTypes.Field | MemberTypes.Property)) != 0).ToList();
                 mInfos.Sort(new GenericComparer<MemberInfo, int>(x => x.GetCustomAttribute<MemberIndexAttribute>().Index));
 
+                var getTypedObjFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetTypedObjectFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(Type), typeof(bool) }, null);
+                var getArrayMarshalAsFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(Type), typeof(int), typeof(bool) }, null);
+                var getArrayFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(UnmanagedType), typeof(Type), typeof(int), typeof(bool) }, null);
+
+                // block temporary variable expr
                 List<Expression> inBlockExpressions = new List<Expression>();
                 var streamVariableExpr = Expression.Variable(typeof(Stream), "stream");
                 var returnObjExp = Expression.Variable(typeof(object), "returnObj");
-                var variantLengthVariableParamExprList = new Dictionary<string,ParameterExpression>();
+                var variantLengthVariableParamExprList = new Dictionary<string, ParameterExpression>();
+                
+                // multi used variable expr
+                var isBigEndianExpr = Expression.Constant(structToRaw.Endian == Endian.BigEndian);
 
-                var getTypedObjFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetTypedObjectFromStream", BindingFlags.Static|BindingFlags.Public,Type.DefaultBinder ,new[] { typeof(Stream), typeof(Type), typeof(bool) },null);
-
-                foreach (MemberInfo mInfo in mInfos) {
+                foreach (MemberInfo mInfo in mInfos)
+                {
                     Type mType = null;
                     PropertyInfo pInfo = null;
                     FieldInfo fInfo = null;
@@ -47,18 +54,34 @@ namespace TPSLRawDataSimulator
                         fInfo = (mInfo as FieldInfo);
                         mType = fInfo.FieldType;
                     }
-                    if (mInfo.GetCustomAttribute<MemberIndexAttribute>().LengthTo is string mName && !string.IsNullOrEmpty(mName)) {
+                    if (mInfo.GetCustomAttribute<MemberIndexAttribute>().LengthTo is string mName && !string.IsNullOrEmpty(mName))
+                    {
                         var variablelength = Expression.Variable(mType, mName + "Length");
-                        variantLengthVariableParamExprList.Add(mName+"Length",variablelength);
-                        inBlockExpressions.Add(Expression.Assign(variablelength,Expression.Call(null, getTypedObjFromStreamMethodInfo,streamVariableExpr,Expression.Constant(mType),Expression.Constant(structToRaw.Endian == Endian.BigEndian))));
-                        continue;
+                        variantLengthVariableParamExprList.Add(mName + "Length", variablelength);
+                        inBlockExpressions.Add(Expression.Assign(variablelength, Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mType), Expression.Constant(structToRaw.Endian == Endian.BigEndian))));
                     }
-                    if (mType.IsArray) {
-                        
+
+                    var mDeclareType = (pInfo != null ? pInfo.PropertyType : fInfo != null ? fInfo.FieldType : null);
+                    if (mType.IsArray)
+                    {
+                        var marshalAs = mType.GetCustomAttribute<MarshalAsAttribute>();
+                        var keyPrefix = (pInfo != null ? pInfo.Name : fInfo != null ? fInfo.Name : "");
+                        var variableKey = keyPrefix + "Length";
+                        if (variantLengthVariableParamExprList.TryGetValue(variableKey, out var variableLengthExpr))
+                        {
+                            if (marshalAs == null)
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Call(null, getArrayFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mDeclareType, typeof(Type)), variableLengthExpr, isBigEndianExpr)));
+                            else
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Call(null, getArrayFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType,typeof(UnmanagedType)), Expression.Constant(mDeclareType, typeof(Type)), variableLengthExpr, isBigEndianExpr)));
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"{variableKey} must defined index before {keyPrefix}");
+                        }
                     }
-                    
+
                 }
-                Expression.Lambda(Expression.Block(new[] { returnObjExp },inBlockExpressions), new[] { streamVariableExpr });
+                Expression.Lambda(Expression.Block(new[] { returnObjExp }, inBlockExpressions), new[] { streamVariableExpr });
             }
             var result = func.Invoke(serializationStream);
             return result;
@@ -85,7 +108,7 @@ namespace TPSLRawDataSimulator
                 var objParam = Expression.Variable(typeof(object), "dataObject");
 
                 inBlockExpressions.Add(Expression.Assign(unBoxedDataObjectExp, Expression.Convert(objParam, type)));
-           
+
                 inBlockExpressions.Add(Expression.Assign(variableExp, Expression.New(typeof(List<byte>).GetConstructor(Type.EmptyTypes))));
                 pInfos.Sort(new GenericComparer<MemberInfo, int>(x => x.GetCustomAttribute<MemberIndexAttribute>().Index));
                 foreach (var memberInfo in pInfos)
@@ -191,7 +214,7 @@ namespace TPSLRawDataSimulator
 
                 }
                 inBlockExpressions.Add(Expression.Call(variableExp, typeof(List<>).MakeGenericType(typeof(byte)).GetMethod("ToArray")));
-                var exp = Expression.Lambda<Func<object, byte[]>>(Expression.Block(new ParameterExpression[] { variableExp, unBoxedDataObjectExp}, inBlockExpressions), objParam);
+                var exp = Expression.Lambda<Func<object, byte[]>>(Expression.Block(new ParameterExpression[] { variableExp, unBoxedDataObjectExp }, inBlockExpressions), objParam);
                 func = exp.Compile();
                 ExpressionStorage.TryAdd(type, func);
             }
