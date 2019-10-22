@@ -24,20 +24,24 @@ namespace TPSLRawDataSimulator
             {
                 //sort the member info by member index.
                 var mInfos = type.GetMembers(BindingFlags.Public | BindingFlags.Instance).Where(x => (x.MemberType & (MemberTypes.Field | MemberTypes.Property)) != 0).ToList();
+                var createInstanceMethodInfo = type.GetConstructor(Type.EmptyTypes);
                 mInfos.Sort(new GenericComparer<MemberInfo, int>(x => x.GetCustomAttribute<MemberIndexAttribute>().Index));
 
                 var getTypedObjFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetTypedObjectFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(Type), typeof(bool) }, null);
-                var getArrayMarshalAsFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(Type), typeof(int), typeof(bool) }, null);
-                var getArrayFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(UnmanagedType), typeof(Type), typeof(int), typeof(bool) }, null);
+                var getArrayFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(Type), typeof(int), typeof(bool) }, null);
+                var getArrayMarshalAsFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(UnmanagedType), typeof(Type), typeof(int), typeof(bool) }, null);
+                var getTypedObjMarshalAsFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetTypedObjectFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(UnmanagedType), typeof(Type), typeof(bool) }, null);
 
                 // block temporary variable expr
                 List<Expression> inBlockExpressions = new List<Expression>();
                 var streamVariableExpr = Expression.Variable(typeof(Stream), "stream");
-                var returnObjExp = Expression.Variable(typeof(object), "returnObj");
+                var returnObjExp = Expression.Variable(type, "returnObj");
                 var variantLengthVariableParamExprList = new Dictionary<string, ParameterExpression>();
-                
+
                 // multi used variable expr
                 var isBigEndianExpr = Expression.Constant(structToRaw.Endian == Endian.BigEndian);
+
+                inBlockExpressions.Add(Expression.Assign(returnObjExp, Expression.New(createInstanceMethodInfo)));
 
                 foreach (MemberInfo mInfo in mInfos)
                 {
@@ -54,17 +58,13 @@ namespace TPSLRawDataSimulator
                         fInfo = (mInfo as FieldInfo);
                         mType = fInfo.FieldType;
                     }
-                    if (mInfo.GetCustomAttribute<MemberIndexAttribute>().LengthTo is string mName && !string.IsNullOrEmpty(mName))
-                    {
-                        var variablelength = Expression.Variable(mType, mName + "Length");
-                        variantLengthVariableParamExprList.Add(mName + "Length", variablelength);
-                        inBlockExpressions.Add(Expression.Assign(variablelength, Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mType), Expression.Constant(structToRaw.Endian == Endian.BigEndian))));
-                    }
+
 
                     var mDeclareType = (pInfo != null ? pInfo.PropertyType : fInfo != null ? fInfo.FieldType : null);
+                    var marshalAs = mType.GetCustomAttribute<MarshalAsAttribute>();
+
                     if (mType.IsArray)
                     {
-                        var marshalAs = mType.GetCustomAttribute<MarshalAsAttribute>();
                         var keyPrefix = (pInfo != null ? pInfo.Name : fInfo != null ? fInfo.Name : "");
                         var variableKey = keyPrefix + "Length";
                         if (variantLengthVariableParamExprList.TryGetValue(variableKey, out var variableLengthExpr))
@@ -72,16 +72,30 @@ namespace TPSLRawDataSimulator
                             if (marshalAs == null)
                                 inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Call(null, getArrayFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mDeclareType, typeof(Type)), variableLengthExpr, isBigEndianExpr)));
                             else
-                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Call(null, getArrayFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType,typeof(UnmanagedType)), Expression.Constant(mDeclareType, typeof(Type)), variableLengthExpr, isBigEndianExpr)));
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Call(null, getArrayMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType, typeof(UnmanagedType)), Expression.Constant(mDeclareType, typeof(Type)), variableLengthExpr, isBigEndianExpr)));
                         }
                         else
                         {
                             throw new InvalidOperationException($"{variableKey} must defined index before {keyPrefix}");
                         }
                     }
-
+                    else if (mInfo.GetCustomAttribute<MemberIndexAttribute>().LengthTo is string mName && !string.IsNullOrEmpty(mName))
+                    {
+                        var variablelength = Expression.Variable(mType, mName + "Length");
+                        variantLengthVariableParamExprList.Add(mName + "Length", variablelength);
+                        inBlockExpressions.Add(Expression.Assign(variablelength, Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mType), Expression.Constant(structToRaw.Endian == Endian.BigEndian))));
+                    }
+                    else
+                    {
+                        if (marshalAs == null)
+                            inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mDeclareType, typeof(Type)), isBigEndianExpr)));
+                        else
+                            inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Call(null, getTypedObjMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType, typeof(UnmanagedType)), Expression.Constant(mDeclareType, typeof(Type)), isBigEndianExpr)));
+                    }
                 }
-                Expression.Lambda(Expression.Block(new[] { returnObjExp }, inBlockExpressions), new[] { streamVariableExpr });
+                var blockDefineContext = variantLengthVariableParamExprList.Values.ToArray().Concat(new[] { returnObjExp, streamVariableExpr });
+                inBlockExpressions.Add(Expression.Convert(returnObjExp,typeof(object)));
+                Expression.Lambda(Expression.Block(blockDefineContext, inBlockExpressions), new[] { streamVariableExpr });
             }
             var result = func.Invoke(serializationStream);
             return result;
@@ -92,19 +106,19 @@ namespace TPSLRawDataSimulator
         /// 
         /// </summary>
         /// <param name="serializationStream"></param>
-        /// <param name="graph"></param>
-        public void Serialize(Stream serializationStream, object graph)
+        /// <param name="obj"></param>
+        public void Serialize(Stream serializationStream, object obj)
         {
-            var type = graph.GetType();
+            var type = obj.GetType();
             var structToRaw = type.GetCustomAttribute<StructToRawAttribute>();
 
             Func<object, byte[]> func = null;
             if (!ExpressionStorage.TryGetValue(type, out func))
             {
-                var pInfos = graph.GetType().GetMembers(BindingFlags.Public | BindingFlags.Instance).Where(x => (x.MemberType & (MemberTypes.Field | MemberTypes.Property)) != 0).ToList();
+                var pInfos = obj.GetType().GetMembers(BindingFlags.Public | BindingFlags.Instance).Where(x => (x.MemberType & (MemberTypes.Field | MemberTypes.Property)) != 0).ToList();
                 List<Expression> inBlockExpressions = new List<Expression>();
                 var variableExp = Expression.Variable(typeof(List<>).MakeGenericType(typeof(byte)), "buffer");
-                var unBoxedDataObjectExp = Expression.Variable(graph.GetType(), "unBoxedDataObject");
+                var unBoxedDataObjectExp = Expression.Variable(obj.GetType(), "unBoxedDataObject");
                 var objParam = Expression.Variable(typeof(object), "dataObject");
 
                 inBlockExpressions.Add(Expression.Assign(unBoxedDataObjectExp, Expression.Convert(objParam, type)));
@@ -219,7 +233,7 @@ namespace TPSLRawDataSimulator
                 ExpressionStorage.TryAdd(type, func);
             }
 
-            var resultBytes = func.Invoke(graph);
+            var resultBytes = func.Invoke(obj);
             serializationStream.Write(resultBytes);
         }
     }

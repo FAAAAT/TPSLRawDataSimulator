@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.IO;
+using System.Threading;
 
 namespace TPSLRawDataSimulator
 {
@@ -326,9 +328,17 @@ namespace TPSLRawDataSimulator
 
         }
 
-
+        /// <summary>
+        /// no auto truncate or padding
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="objType"></param>
+        /// <param name="isBigEndian"></param>
+        /// <returns></returns>
         public static object GetTypedObjectFromBytes(byte[] bytes, Type objType, bool isBigEndian)
         {
+            if (GetBytesOfType(objType) is int targetLength && bytes.Length != targetLength)
+                throw new ArgumentException($"Target type expected lenth:{targetLength}, provided buffer length:{bytes.Length}");
             var bytesMustReverse = BitConverter.IsLittleEndian == isBigEndian;
             if (bytesMustReverse)
             {
@@ -393,6 +403,32 @@ namespace TPSLRawDataSimulator
             return GetTypedObjectFromBytes(buffer, objType, isBigEndian);
         }
 
+        /// <summary>
+        /// auto truncate or padding
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="marshalAsType"></param>
+        /// <param name="objType"></param>
+        /// <param name="isBigEndian"></param>
+        /// <returns></returns>
+        public static object GetTypedObjectFromStream(Stream stream, UnmanagedType marshalAsType, Type objType, bool isBigEndian) {
+            var marshalBytes = GetBytesOfType(marshalAsType);
+            var typeDeclaredBytes = GetBytesOfType(objType);
+            var buffer = new byte[marshalBytes];
+            stream.Read(buffer, 0, buffer.Length);
+            //padding zero
+            buffer = DeserializeAutoPaddingOrTruncate(buffer, objType, isBigEndian);
+            return GetTypedObjectFromBytes(buffer, objType, isBigEndian);
+        }
+
+        /// <summary>
+        ///
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="objType"></param>
+        /// <param name="lengthInByte"></param>
+        /// <param name="isBigEndian"></param>
+        /// <returns></returns>
         public static Array GetArrayFromStream(Stream stream, Type objType, int lengthInByte, bool isBigEndian)
         {
             var typeBytes = GetBytesOfType(objType);
@@ -409,32 +445,39 @@ namespace TPSLRawDataSimulator
             return result;
         }
 
+        /// <summary>
+        /// auto truncate or padding
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="marshalAsType"></param>
+        /// <param name="objType"></param>
+        /// <param name="lengthInByte"></param>
+        /// <param name="isBigEndian"></param>
+        /// <returns></returns>
+        //some truncation problem
         public static Array GetArrayFromStream(Stream stream, UnmanagedType marshalAsType, Type objType, int lengthInByte, bool isBigEndian)
         {
-            var typeBytes = GetBytesOfType(marshalAsType);
+            var marshalBytes = GetBytesOfType(marshalAsType);
             var typeDeclaredBytes = GetBytesOfType(objType);
-            if (lengthInByte % typeBytes != 0)
+            if (lengthInByte % marshalBytes != 0)
             {
                 throw new ArgumentException($"Element type ${objType.FullName} of array is not fit with the length of bytes ${lengthInByte}");
             }
-            var arrayLength = lengthInByte / typeBytes;
-            var byteResult = new List<byte>();
+            var arrayLength = lengthInByte / marshalBytes;
+            var byteResult = Array.CreateInstance(objType,arrayLength);
             //padding 0 for trancatedbytes.
-            var readoffset = isBigEndian ? typeDeclaredBytes - typeBytes : 0;
+            var readoffset = isBigEndian ? typeDeclaredBytes - marshalBytes : 0;
             
             for (var i = 0; i < arrayLength; i++)
             {
-                var buffer = new byte[typeBytes];
-                var readed = stream.Read(buffer, 0, buffer.Length);
-                if(readed < buffer.Length)
-                {
-                    throw new InvalidOperationException("stream ending unexpected.");
-                }
-                var temp = new byte[typeDeclaredBytes];
-                stream.Read(temp, readoffset, typeBytes);
-                byteResult.AddRange(temp);
+                var buffer = new byte[marshalBytes];
+                var readedLength = stream.Read(buffer, 0, marshalBytes);
+                if (readedLength < marshalBytes)
+                    throw new Exception("stream ended unexpeced");
+                buffer = DeserializeAutoPaddingOrTruncate(buffer,objType,isBigEndian);
+                byteResult.SetValue(GetTypedObjectFromBytes(buffer,objType,isBigEndian), i);
             }
-            return byteResult.ToArray();
+            return byteResult;
         }
 
         /// <summary>
@@ -468,6 +511,37 @@ namespace TPSLRawDataSimulator
             return GetBytesDependOnEndian(bytes, bytes.Length, sourceBigEndian, targetBigEndian);
         }
 
+        public static byte[] DeserializeAutoPaddingOrTruncate(byte[] bytes, Type objType, bool isBigEndian)
+        {
+            var typeBytes = GetBytesOfType(objType);
+            //truncate
+            if (typeBytes > bytes.Length)
+            {
+                if (isBigEndian)
+                    return new byte[typeBytes - bytes.Length].Concat(bytes).ToArray();
+                else
+                    return bytes.Concat(new byte[typeBytes - bytes.Length]).ToArray();
+            }
+            //padding
+            else if (typeBytes < bytes.Length)
+            {
+                if (isBigEndian)
+                {
+                    var result = new byte[typeBytes];
+                    bytes.CopyTo(result, typeBytes - bytes.Length);
+                    return result;
+                }
+                else {
+                    var result = new Span<byte>(bytes).Slice(0, typeBytes);
+                    return result.ToArray();
+                }
+            }
+            else
+            {
+                return bytes;
+            }
+        }
+
         /// <summary>
         /// this method is for unboxing a object.
         /// if you unbox a object to another type instead of its origin type, you will get an exception.
@@ -481,7 +555,6 @@ namespace TPSLRawDataSimulator
         //            return (int)obj;
         //        if ()
         //    }
-
         //}
     }
 
