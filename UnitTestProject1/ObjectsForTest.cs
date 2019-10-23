@@ -61,6 +61,13 @@ namespace UnitTestProject1
         [MemberIndex(Index = 200)]
         public bool pBool { get; set; }
 
+        public override bool Equals(object obj)
+        {
+            if (obj.GetType() != obj.GetType()){
+                return false;
+            }
+            
+        }
     }
     public struct ArrayValueObject
     {
