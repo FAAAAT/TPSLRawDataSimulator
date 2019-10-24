@@ -95,7 +95,7 @@ namespace UnitTestProject1
             //小端 位数过多
             Assert.ThrowsException<ArgumentException>(() =>
             {
-                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
                 stream = new MemoryStream(buffer);
                 result = (int[])BytesHelper.GetArrayFromStream(stream, typeof(int), buffer.Length, false);
                 Assert.IsTrue(Enumerable.SequenceEqual(new[] { 1 }, result));
