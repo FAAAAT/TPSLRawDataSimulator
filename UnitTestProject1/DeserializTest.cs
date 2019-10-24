@@ -14,10 +14,10 @@ namespace UnitTestProject1
     {
         [TestMethod]
         public void Test_RawBinaryFormatter_Deserialize() {
-            var testObj = ObjectsInitializer.InitATestPureValueObject();
+            var expected = ObjectsInitializer.InitATestPureValueObject();
             var result = ObjectsInitializer.GetATestPureValueObjectMemoryLayout();
             var actual = new RawBinaryFormatter().Deserialize(new MemoryStream(result.ToArray()), typeof(NormalValueObject));
-
+            Assert.AreEqual(expected, actual);
         }
     }
 }

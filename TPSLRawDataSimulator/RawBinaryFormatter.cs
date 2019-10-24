@@ -24,7 +24,7 @@ namespace TPSLRawDataSimulator
             {
                 //sort the member info by member index.
                 var mInfos = type.GetMembers(BindingFlags.Public | BindingFlags.Instance).Where(x => (x.MemberType & (MemberTypes.Field | MemberTypes.Property)) != 0).ToList();
-                var createInstanceMethodInfo = type.GetConstructor(Type.EmptyTypes);
+                //var createInstanceMethodInfo = type.GetConstructor(Type.EmptyTypes);
                 mInfos.Sort(new GenericComparer<MemberInfo, int>(x => x.GetCustomAttribute<MemberIndexAttribute>().Index));
 
                 var getTypedObjFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetTypedObjectFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(Type), typeof(bool) }, null);
@@ -39,9 +39,9 @@ namespace TPSLRawDataSimulator
                 var variantLengthVariableParamExprList = new Dictionary<string, ParameterExpression>();
 
                 // multi used variable expr
-                var isBigEndianExpr = Expression.Constant(structToRaw.Endian == Endian.BigEndian);
+                var isBigEndianExpr = Expression.Constant(structToRaw == null || structToRaw.Endian == Endian.BigEndian);
 
-                inBlockExpressions.Add(Expression.Assign(returnObjExp, Expression.New(createInstanceMethodInfo)));
+                inBlockExpressions.Add(Expression.Assign(returnObjExp, Expression.New(type)));
 
                 foreach (MemberInfo mInfo in mInfos)
                 {

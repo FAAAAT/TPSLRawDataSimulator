@@ -63,9 +63,113 @@ namespace UnitTestProject1
 
         public override bool Equals(object obj)
         {
-            if (obj.GetType() != obj.GetType()){
+            if (GetType() != obj.GetType())
+            {
                 return false;
             }
+
+            var unboxedObj = (NormalValueObject)obj;
+            if (!(fInt == unboxedObj.fInt))
+            {
+                return false;
+            }
+
+            if (!(fUInt == unboxedObj.fUInt))
+            {
+                return false;
+            }
+
+            if (!(fLong == unboxedObj.fLong))
+            {
+                return false;
+            }
+
+            if (!(fULong == unboxedObj.fULong))
+            {
+                return false;
+            }
+
+            if (!(fShort == unboxedObj.fShort))
+            {
+                return false;
+            }
+
+            if (!(fUShort == unboxedObj.fUShort))
+            {
+                return false;
+            }
+
+            if (!(fFloat == unboxedObj.fFloat))
+            {
+                return false;
+            }
+
+            if (!(fDouble == unboxedObj.fDouble))
+            {
+                return false;
+            }
+
+            if (!(fChar == unboxedObj.fChar))
+            {
+                return false;
+            }
+
+            if (!(fBool == unboxedObj.fBool))
+            {
+                return false;
+            }
+
+            if (!(pInt == unboxedObj.pInt))
+            {
+                return false;
+            }
+
+            if (!(pUInt == unboxedObj.pUInt))
+            {
+                return false;
+            }
+
+            if (!(pLong == unboxedObj.pLong))
+            {
+                return false;
+            }
+
+            if (!(pULong == unboxedObj.pULong))
+            {
+                return false;
+            }
+
+            if (!(pShort == unboxedObj.pShort))
+            {
+                return false;
+            }
+
+            if (!(pUShort == unboxedObj.pUShort))
+            {
+                return false;
+            }
+
+            if (!(pFloat == unboxedObj.pFloat))
+            {
+                return false;
+            }
+
+            if (!(pDouble == unboxedObj.pDouble))
+            {
+                return false;
+            }
+
+            if (!(pChar == unboxedObj.pChar))
+            {
+                return false;
+            }
+
+            if (!(pBool == unboxedObj.pBool))
+            {
+                return false;
+            }
+
+            return true;
         }
     }
     public struct ArrayValueObject
@@ -111,6 +215,117 @@ namespace UnitTestProject1
         public char[] pCharArray { get; set; }
         [MemberIndex(Index = 200)]
         public bool[] pBoolArray { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (GetType() != obj.GetType())
+            {
+                return false;
+            }
+
+            var unboxedObj = (ArrayValueObject)obj;
+            if (!Enumerable.SequenceEqual(fIntArray, unboxedObj.fIntArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fUIntArray, unboxedObj.fUIntArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fLongArray, unboxedObj.fLongArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fULongArray, unboxedObj.fULongArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fShortArray, unboxedObj.fShortArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fUShortArray, unboxedObj.fUShortArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fFloatArray, unboxedObj.fFloatArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fDoubleArray, unboxedObj.fDoubleArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fCharArray, unboxedObj.fCharArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fBoolArray, unboxedObj.fBoolArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pIntArray, unboxedObj.pIntArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pUIntArray, unboxedObj.pUIntArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pLongArray, unboxedObj.pLongArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pULongArray, unboxedObj.pULongArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pShortArray, unboxedObj.pShortArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pUShortArray, unboxedObj.pUShortArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pFloatArray, unboxedObj.pFloatArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pDoubleArray, unboxedObj.pDoubleArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pCharArray, unboxedObj.pCharArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pBoolArray, unboxedObj.pBoolArray))
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 
     [StructToRaw(Endian = Endian.BigEndian)]
@@ -157,6 +372,117 @@ namespace UnitTestProject1
         public char[] pCharArray { get; set; }
         [MemberIndex(Index = 200)]
         public bool[] pBoolArray { get; set; }
+
+        public override bool Equals(object obj)
+        {
+            if (GetType() != obj.GetType())
+            {
+                return false;
+            }
+
+            var unboxedObj = (ArrayValueSpecifiedEndianObject)obj;
+            if (!Enumerable.SequenceEqual(fIntArray, unboxedObj.fIntArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fUIntArray, unboxedObj.fUIntArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fLongArray, unboxedObj.fLongArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fULongArray, unboxedObj.fULongArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fShortArray, unboxedObj.fShortArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fUShortArray, unboxedObj.fUShortArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fFloatArray, unboxedObj.fFloatArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fDoubleArray, unboxedObj.fDoubleArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fCharArray, unboxedObj.fCharArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(fBoolArray, unboxedObj.fBoolArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pIntArray, unboxedObj.pIntArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pUIntArray, unboxedObj.pUIntArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pLongArray, unboxedObj.pLongArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pULongArray, unboxedObj.pULongArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pShortArray, unboxedObj.pShortArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pUShortArray, unboxedObj.pUShortArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pFloatArray, unboxedObj.pFloatArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pDoubleArray, unboxedObj.pDoubleArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pCharArray, unboxedObj.pCharArray))
+            {
+                return false;
+            }
+
+            if (!Enumerable.SequenceEqual(pBoolArray, unboxedObj.pBoolArray))
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 
 
@@ -182,7 +508,46 @@ namespace UnitTestProject1
         [MarshalAs(UnmanagedType.R8)]
         public double fR8;
 
+        public override bool Equals(object obj)
+        {
+            if (GetType() != obj.GetType())
+            {
+                return false;
+            }
 
+            var unboxedObj = (MarshalAs)obj;
+            if (!(fU1 == unboxedObj.fU1))
+            {
+                return false;
+            }
+
+            if (!(fU2 == unboxedObj.fU2))
+            {
+                return false;
+            }
+
+            if (!(fU4 == unboxedObj.fU4))
+            {
+                return false;
+            }
+
+            if (!(fU8 == unboxedObj.fU8))
+            {
+                return false;
+            }
+
+            if (!(fR4 == unboxedObj.fR4))
+            {
+                return false;
+            }
+
+            if (!(fR8 == unboxedObj.fR8))
+            {
+                return false;
+            }
+
+            return true;
+        }
     }
 
     public sealed class ObjectsInitializer {

@@ -183,8 +183,6 @@ namespace TPSLRawDataSimulator
             return crc_reg;
         }
     }
-
-
 }
 
 
