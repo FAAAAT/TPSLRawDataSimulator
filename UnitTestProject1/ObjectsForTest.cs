@@ -66,7 +66,6 @@ namespace UnitTestProject1
             if (obj.GetType() != obj.GetType()){
                 return false;
             }
-            
         }
     }
     public struct ArrayValueObject
