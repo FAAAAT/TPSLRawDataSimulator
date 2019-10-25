@@ -22,7 +22,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Test_BytesHelper_GetTypedObjectFromBytes()
+        public void Test_BytesHelper_GetTypedObjectFromBytes_TruncationTest()
         {
             //big endian
             var buffer = new byte[] { 0x7F, 0xFF, 0xFF, 0xFF };
@@ -56,6 +56,11 @@ namespace UnitTestProject1
             buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(int), false);
             result = (int)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(int), false);
             Assert.AreEqual(1, result);
+        }
+
+        [TestMethod]
+        public void Test_BytesHelper_GetTypedObjectFromBytes_EachType() {
+            
         }
 
         [TestMethod]

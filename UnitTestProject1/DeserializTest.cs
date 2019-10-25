@@ -13,11 +13,27 @@ namespace UnitTestProject1
     public class DeserializTest
     {
         [TestMethod]
-        public void Test_RawBinaryFormatter_Deserialize() {
+        public void Test_RawBinaryFormatter_Deserialize_PureValueObject() {
             var expected = ObjectsInitializer.InitATestPureValueObject();
             var result = ObjectsInitializer.GetATestPureValueObjectMemoryLayout();
             var actual = new RawBinaryFormatter().Deserialize(new MemoryStream(result.ToArray()), typeof(NormalValueObject));
-            Assert.AreEqual(expected, actual);
+            Assert.IsTrue(expected.Equals(actual));
+        }
+
+        [TestMethod]
+        public void Test_RawBinaryFormatter_Deserialize_ArrayValueObject() {
+            var expected = ObjectsInitializer.InitATestArrayValueObject();
+            var result = ObjectsInitializer.GetATestArrayValueObjectMemeryLayout();
+            var actual = new RawBinaryFormatter().Deserialize(new MemoryStream(result.ToArray()), typeof(ArrayValueObject));
+            Assert.IsTrue(expected.Equals(actual));
+        }
+
+        [TestMethod]
+        public void Test_RawBinaryFormatter_Deserialize_ArrayValueObjectWithBigEndian() {
+            var expected = ObjectsInitializer.InitATestArraySpecifiedEndianValueObject();
+            var result = ObjectsInitializer.GetATestArrayValueObjectMemeryLayoutBigEndian();
+            var actual = new RawBinaryFormatter().Deserialize(new MemoryStream(result.ToArray()), typeof(ArrayValueSpecifiedEndianObject));
+            Assert.IsTrue(expected.Equals(actual));
         }
     }
 }
