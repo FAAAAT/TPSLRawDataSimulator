@@ -1,6 +1,6 @@
 stages: 
-    -build 
-    -test
+    - build 
+    - test
 image:
     name:"mcr.microsoft.com/dotnet/core/sdk:latest"
 
