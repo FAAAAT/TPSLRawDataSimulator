@@ -1,8 +1,9 @@
 stages: 
     - build 
     - test
-image:
-    name:"mcr.microsoft.com/dotnet/core/sdk:latest"
+default:
+    image:
+        name: "mcr.microsoft.com/dotnet/core/sdk:latest"
 
 build: 
     stage: build
