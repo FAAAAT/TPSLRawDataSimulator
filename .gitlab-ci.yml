@@ -10,7 +10,10 @@ build:
     
     script:
         - "dotnet build"
-    artifacts: "./TPSLRawDataSimulator/bin/Debug"
+    artifacts:
+        paths: 
+            - "./TPSLRawDataSimulator/bin/Debug"
+
 test:
     stage: test
     script:
