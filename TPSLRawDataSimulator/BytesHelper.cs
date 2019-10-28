@@ -229,6 +229,8 @@ namespace TPSLRawDataSimulator
                 return sizeof(short);
             if (t == typeof(byte))
                 return sizeof(byte);
+            if (t == typeof(sbyte))
+                return sizeof(sbyte);
             if (t == typeof(ushort))
                 return sizeof(ushort);
             if (t == typeof(float))
