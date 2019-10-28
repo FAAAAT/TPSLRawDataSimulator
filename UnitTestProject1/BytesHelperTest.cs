@@ -24,7 +24,7 @@ namespace UnitTestProject1
         [TestMethod]
         public void Test_BytesHelper_GetTypedObjectFromBytes()
         {
-            #region INT
+            #region INT 类型
             //big endian
             var buffer = new byte[] { 0x7F, 0xFF, 0xFF, 0xFF };
             var result = (int)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(int), true);
@@ -59,7 +59,7 @@ namespace UnitTestProject1
             Assert.AreEqual(1, result);
             #endregion
 
-            #region uint
+            #region uint类型
             //大端
             buffer = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
             var uintResult = (uint)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(uint), true);
@@ -95,8 +95,149 @@ namespace UnitTestProject1
             Assert.AreEqual((uint)1, uintResult);
             #endregion
 
+            #region byte 类型
+            //大端
+            buffer = new byte[] { 0xFF };
+            var byteResult = (byte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(byte), true);
+            Assert.AreEqual(byte.MaxValue, byteResult);
+            //小端
+            buffer = new byte[] { 0x01 };
+            byteResult = (byte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(byte), false);
+            Assert.AreEqual((byte)1, byteResult);
+            //小端 位数不够
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = Array.Empty<byte>();
+                byteResult = (byte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(byte), false);
+                Assert.AreEqual((byte)1, byteResult);
+            });
+            //小端 位数不够 补0
+            buffer = Array.Empty<byte>();
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(byte), false);
+            byteResult = (byte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(byte), false);
+            Assert.AreEqual((byte)0, byteResult);
+            //小端 位数 过多异常
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+                byteResult = (byte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(byte), false);
+                Assert.AreEqual((byte)1, byteResult);
 
+            });
+            // 小端 位数过多 截断处理
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(byte), false);
+            byteResult = (byte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(byte), false);
+            Assert.AreEqual((byte)1, byteResult);
+            #endregion
 
+            #region sbyte类型
+            //大端
+            buffer = new byte[] { 0x7F };
+            var sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), true);
+            Assert.AreEqual(sbyte.MaxValue, sbyteResult);
+            //小端
+            buffer = new byte[] { 0x01 };
+            sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false);
+            Assert.AreEqual((sbyte)1, sbyteResult);
+            //小端 位数不够
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { };
+                sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false);
+                Assert.AreEqual((sbyte)1, sbyteResult);
+            });
+            //小端 位数不够 补0
+            buffer = new byte[] { };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(sbyte), false);
+            sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false);
+            Assert.AreEqual((sbyte)0, sbyteResult);
+            //小端 位数 过多异常
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+                sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false);
+                Assert.AreEqual((sbyte)1, sbyteResult);
+
+            });
+            // 小端 位数过多 截断处理
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(sbyte), false);
+            sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false);
+            Assert.AreEqual((sbyte)1, sbyteResult);
+            #endregion
+
+            #region short类型
+            //大端
+            buffer = new byte[] { 0x7F, 0xFF };
+            var shortResult = (short)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(short), true);
+            Assert.AreEqual(short.MaxValue, shortResult);
+            //小端
+            buffer = new byte[] { 0x01, 0x00 };
+            shortResult = (short)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(short), false);
+            Assert.AreEqual((short)1, shortResult);
+            //小端 位数不够
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, };
+                shortResult = (short)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(short), false);
+                Assert.AreEqual((short)1, shortResult);
+            });
+            //小端 位数不够 补0
+            buffer = new byte[] { 0x01,};
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(short), false);
+            shortResult = (short)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(short), false);
+            Assert.AreEqual((short)1, shortResult);
+            //小端 位数 过多异常
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+                shortResult = (short)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(short), false);
+                Assert.AreEqual((short)1, shortResult);
+
+            });
+            // 小端 位数过多 截断处理
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(short), false);
+            shortResult = (short)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(short), false);
+            Assert.AreEqual((short)1, shortResult);
+            #endregion
+
+            #region ushort类型
+            //大端
+            buffer = new byte[] { 0xFF, 0xFF };
+            var ushortResult = (ushort)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ushort), true);
+            Assert.AreEqual(ushort.MaxValue, ushortResult);
+            //小端
+            buffer = new byte[] { 0x01, 0x00 };
+            ushortResult = (ushort)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ushort), false);
+            Assert.AreEqual((ushort)1, ushortResult);
+            //小端 位数不够
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, };
+                ushortResult = (ushort)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ushort), false);
+                Assert.AreEqual((ushort)1, ushortResult);
+            });
+            //小端 位数不够 补0
+            buffer = new byte[] { 0x01, };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(ushort), false);
+            ushortResult = (ushort)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ushort), false);
+            Assert.AreEqual((ushort)1, ushortResult);
+            //小端 位数 过多异常
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+                ushortResult = (ushort)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ushort), false);
+                Assert.AreEqual((ushort)1, ushortResult);
+
+            });
+            // 小端 位数过多 截断处理
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(ushort), false);
+            ushortResult = (ushort)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ushort), false);
+            Assert.AreEqual((ushort)1, ushortResult);
+            #endregion
         }
 
 
