@@ -24,6 +24,7 @@ namespace UnitTestProject1
         [TestMethod]
         public void Test_BytesHelper_GetTypedObjectFromBytes()
         {
+            #region INT
             //big endian
             var buffer = new byte[] { 0x7F, 0xFF, 0xFF, 0xFF };
             var result = (int)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(int), true);
@@ -56,7 +57,50 @@ namespace UnitTestProject1
             buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(int), false);
             result = (int)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(int), false);
             Assert.AreEqual(1, result);
+            #endregion
+
+            #region uint
+            //大端
+            buffer = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF };
+            var uintResult = (uint)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(uint), true);
+            Assert.AreEqual(uint.MaxValue, uintResult);
+            //小端
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00 };
+            uintResult = (uint)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(uint), false);
+            Assert.AreEqual((uint)1, uintResult);
+            //小端 位数不够
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00 };
+                uintResult = (uint)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(uint), false);
+                Assert.AreEqual((uint)1, uintResult);
+            });
+            //小端 位数不够 补0
+            buffer = new byte[] { 0x01, 0x00 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(uint), false);
+            uintResult = (uint)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(uint), false);
+            Assert.AreEqual((uint)1, uintResult);
+            //小端 位数 过多异常
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+                uintResult = (uint)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(uint), false);
+                Assert.AreEqual((uint)1, uintResult);
+
+            });
+            // 小端 位数过多 截断处理
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(uint), false);
+            uintResult = (uint)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(uint), false);
+            Assert.AreEqual((uint)1, uintResult);
+            #endregion
+
+
+
         }
+
+
+
 
         [TestMethod]
         public void Test_BytesHelper_GetTypedObjectFromStream()
