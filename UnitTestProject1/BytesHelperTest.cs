@@ -22,7 +22,7 @@ namespace UnitTestProject1
         }
 
         [TestMethod]
-        public void Test_BytesHelper_GetTypedObjectFromBytes()
+        public void Test_BytesHelper_GetTypedObjectFromBytes_TruncationTest()
         {
             #region INT 类型
             //big endian
@@ -242,6 +242,11 @@ namespace UnitTestProject1
 
 
 
+
+        [TestMethod]
+        public void Test_BytesHelper_GetTypedObjectFromBytes_EachType() {
+            
+        }
 
         [TestMethod]
         public void Test_BytesHelper_GetTypedObjectFromStream()
