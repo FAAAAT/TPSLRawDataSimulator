@@ -238,6 +238,114 @@ namespace UnitTestProject1
             ushortResult = (ushort)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ushort), false);
             Assert.AreEqual((ushort)1, ushortResult);
             #endregion
+
+            #region long类型
+            //大端
+            buffer = new byte[] { 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+            var longResult = (long)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(long), true);
+            Assert.AreEqual(long.MaxValue, longResult);
+            //小端
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+            longResult = (long)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(long), false);
+            Assert.AreEqual((long)1, longResult);
+            //小端 位数不够
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00 };
+                longResult = (long)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(long), false);
+                Assert.AreEqual((long)1, longResult);
+            });
+            //小端 位数不够 补0
+            buffer = new byte[] { 0x01, 0x00, 0x00 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(long), false);
+            longResult = (long)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(long), false);
+            Assert.AreEqual((long)1, longResult);
+            //小端 位数 过多异常
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+                longResult = (long)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(long), false);
+                Assert.AreEqual((long)1, longResult);
+
+            });
+            // 小端 位数过多 截断处理
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(long), false);
+            longResult = (long)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(long), false);
+            Assert.AreEqual((long)1, longResult);
+            #endregion
+
+            #region ulong类型
+            //大端
+            buffer = new byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+            var ulongResult = (ulong)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ulong), true);
+            Assert.AreEqual(ulong.MaxValue, ulongResult);
+            //小端
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+            ulongResult = (ulong)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ulong), false);
+            Assert.AreEqual((ulong)1, ulongResult);
+            //小端 位数不够
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00 };
+                ulongResult = (ulong)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ulong), false);
+                Assert.AreEqual((ulong)1, ulongResult);
+            });
+            //小端 位数不够 补0
+            buffer = new byte[] { 0x01, 0x00, 0x00 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(ulong), false);
+            ulongResult = (ulong)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ulong), false);
+            Assert.AreEqual((ulong)1, ulongResult);
+            //小端 位数 过多异常
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+                ulongResult = (ulong)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ulong), false);
+                Assert.AreEqual((ulong)1, ulongResult);
+
+            });
+            // 小端 位数过多 截断处理
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(ulong), false);
+            ulongResult = (ulong)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(ulong), false);
+            Assert.AreEqual((ulong)1, ulongResult);
+            #endregion
+
+            #region char类型
+            //大端
+            buffer = new byte[] { 0xFF, 0xFF };
+            var charResult = (char)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(char), true);
+            Assert.AreEqual(char.MaxValue, charResult);
+            //小端
+            buffer = new byte[] { 0x01, 0x00};
+            charResult = (char)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(char), false);
+            Assert.AreEqual((char)1, charResult);
+            //小端 位数不够
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01 };
+                charResult = (char)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(char), false);
+                Assert.AreEqual((char)1, charResult);
+            });
+            //小端 位数不够 补0
+            buffer = new byte[] { 0x01 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(char), false);
+            charResult = (char)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(char), false);
+            Assert.AreEqual((char)1, charResult);
+            //小端 位数 过多异常
+            Assert.ThrowsException<ArgumentException>(() =>
+            {
+                buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+                charResult = (char)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(char), false);
+                Assert.AreEqual((char)1, charResult);
+
+            });
+            // 小端 位数过多 截断处理
+            buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(char), false);
+            charResult = (char)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(char), false);
+            Assert.AreEqual((char)1, charResult);
+            #endregion
         }
 
 

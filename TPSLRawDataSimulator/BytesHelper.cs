@@ -225,6 +225,8 @@ namespace TPSLRawDataSimulator
                 return sizeof(uint);
             if (t == typeof(long))
                 return sizeof(long);
+            if (t == typeof(ulong))
+                return sizeof(ulong);
             if (t == typeof(short))
                 return sizeof(short);
             if (t == typeof(byte))
