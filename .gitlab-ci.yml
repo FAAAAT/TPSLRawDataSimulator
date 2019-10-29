@@ -1,0 +1,20 @@
+stages: 
+    - build 
+    - test
+default:
+    image:
+        name: "mcr.microsoft.com/dotnet/core/sdk:latest"
+
+build: 
+    stage: build
+    
+    script:
+        - "dotnet build"
+    artifacts:
+        paths: 
+            - "./TPSLRawDataSimulator/bin/Debug"
+
+test:
+    stage: test
+    script:
+        - "dotnet test --no-build"

@@ -241,7 +241,26 @@ namespace TPSLRawDataSimulator
                 return sizeof(char);
             if (t == typeof(double))
                 return sizeof(double);
+            if (t == typeof(UInt16) || t == typeof(Int16))
+                return sizeof(UInt16);
+            if (t == typeof(UInt32) || t == typeof(Int32))
+                return sizeof(UInt32);
+            if (t == typeof(UInt64) || t == typeof(Int64))
+                return sizeof(UInt64);
+            if (t == typeof(bool) || t == typeof(Boolean))
+                return sizeof(bool);
+            
             return -1;
+        }
+
+        public static int GetBytesCountOfArray(Array array) {
+            var elementType = array.GetType().GetElementType();
+            var elementLengthInByte = GetBytesOfType(elementType);
+            if (elementLengthInByte < 0)
+            {
+                throw new ArgumentException( $"Element type:{elementType} of this array is not a fix length type.","array");
+            }
+            return array.Length * elementLengthInByte;
         }
 
         public static int GetBytesOfType(UnmanagedType t)
@@ -358,11 +377,11 @@ namespace TPSLRawDataSimulator
             }
             if (objType == typeof(byte))
             {
-                return !BitConverter.IsLittleEndian ? bytes.First() : bytes.Last();
+                return bytes[0];
             }
             if (objType == typeof(sbyte))
             {
-                return (sbyte)(!BitConverter.IsLittleEndian ? bytes.First() : bytes.Last());
+                return bytes[0];
             }
             if (objType == typeof(short))
             {
@@ -370,7 +389,7 @@ namespace TPSLRawDataSimulator
             }
             if (objType == typeof(ushort))
             {
-                return unchecked((ushort)BitConverter.ToInt16(bytes));
+                return unchecked((ushort)BitConverter.ToUInt16(bytes));
             }
             if (objType == typeof(long))
             {
@@ -378,7 +397,7 @@ namespace TPSLRawDataSimulator
             }
             if (objType == typeof(ulong))
             {
-                return unchecked((ulong)BitConverter.ToInt64(bytes));
+                return unchecked((ulong)BitConverter.ToUInt64(bytes));
             }
             if (objType == typeof(char))
             {
@@ -429,22 +448,22 @@ namespace TPSLRawDataSimulator
         ///
         /// </summary>
         /// <param name="stream"></param>
-        /// <param name="objType"></param>
+        /// <param name="elementType"></param>
         /// <param name="lengthInByte"></param>
         /// <param name="isBigEndian"></param>
         /// <returns></returns>
-        public static Array GetArrayFromStream(Stream stream, Type objType, int lengthInByte, bool isBigEndian)
+        public static Array GetArrayFromStream(Stream stream, Type elementType, int lengthInByte, bool isBigEndian)
         {
-            var typeBytes = GetBytesOfType(objType);
+            var typeBytes = GetBytesOfType(elementType);
             if (lengthInByte % typeBytes != 0)
             {
-                throw new ArgumentException($"Element type ${objType.FullName} of array is not fit with the length of bytes ${lengthInByte}");
+                throw new ArgumentException($"Element type ${elementType.FullName} of array is not fit with the length of bytes ${lengthInByte}");
             }
             var arrayLength = lengthInByte / typeBytes;
-            var result = Array.CreateInstance(objType, arrayLength);
+            var result = Array.CreateInstance(elementType, arrayLength);
             for (var i = 0; i < arrayLength; i++)
             {
-                result.SetValue(GetTypedObjectFromStream(stream, objType, isBigEndian), i);
+                result.SetValue(GetTypedObjectFromStream(stream, elementType, isBigEndian), i);
             }
             return result;
         }
