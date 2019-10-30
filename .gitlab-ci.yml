@@ -19,4 +19,5 @@ build:
 test:
     stage: test
     script:
-        - "dotnet test --no-build -t -v diag"
+        - "cd ./UnitTestProject1/"
+        - "dotnet test --no-build -v diag"
