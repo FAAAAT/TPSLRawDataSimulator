@@ -18,7 +18,7 @@ build:
 
 test:
     stage: test
-    beforescript:
+    before_script:
         - "dotnet restore"
     script:
         - "cd ./UnitTestProject1/"
