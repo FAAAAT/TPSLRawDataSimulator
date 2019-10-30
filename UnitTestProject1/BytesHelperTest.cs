@@ -298,11 +298,5 @@ namespace UnitTestProject1
             Assert.IsTrue(Enumerable.SequenceEqual(new[] { 1 }, result));
 
         }
-
-        [TestMethod]
-        public void Test_Fault(){
-            Assert.IsTrue(false);
-        }
-
     }
 }
