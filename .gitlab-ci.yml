@@ -20,4 +20,4 @@ test:
     stage: test
     script:
         - "cd ./UnitTestProject1/"
-        - "dotnet test --no-build -v diag"
+        - "dotnet test"
