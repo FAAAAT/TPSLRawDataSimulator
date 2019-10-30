@@ -19,4 +19,4 @@ build:
 test:
     stage: test
     script:
-        - "dotnet test --no-build -t"
+        - "dotnet test --no-build -t -v diag"
