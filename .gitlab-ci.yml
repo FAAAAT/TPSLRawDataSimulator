@@ -10,7 +10,7 @@ build:
     
     script:
         - "dotnet build"
-        - "ls -lh ./UnitTestProject1/bin/Debug"
+        - "ls -lh ./UnitTestProject1/bin/Debug/netcoreapp3.0/"
     artifacts:
         paths: 
             - "./TPSLRawDataSimulator/bin/Debug"
