@@ -13,8 +13,9 @@ build:
     artifacts:
         paths: 
             - "./TPSLRawDataSimulator/bin/Debug"
+            - "./UnitTestProject1/bin/Debug"
 
 test:
     stage: test
     script:
-        - "dotnet test --no-build"
+        - "dotnet test --no-build -t"
