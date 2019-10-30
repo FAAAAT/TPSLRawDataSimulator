@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -297,6 +297,11 @@ namespace UnitTestProject1
             result = (int[])BytesHelper.GetArrayFromStream(stream, typeof(int), buffer.Length, false);
             Assert.IsTrue(Enumerable.SequenceEqual(new[] { 1 }, result));
 
+        }
+
+        [TestMethod]
+        public void Test_Fault(){
+            Assert.IsTrue(false);
         }
 
     }
