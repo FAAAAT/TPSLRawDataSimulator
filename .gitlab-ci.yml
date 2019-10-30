@@ -18,6 +18,8 @@ build:
 
 test:
     stage: test
+    beforescript:
+        - "dotnet restore"
     script:
         - "cd ./UnitTestProject1/"
-        - "dotnet test"
+        - "dotnet test --no-build"
