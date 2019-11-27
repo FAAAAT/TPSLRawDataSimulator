@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -442,6 +442,5 @@ namespace UnitTestProject1
             Assert.IsTrue(Enumerable.SequenceEqual(new[] { 1 }, result));
 
         }
-
     }
 }
