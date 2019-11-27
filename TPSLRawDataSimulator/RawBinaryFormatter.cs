@@ -39,7 +39,7 @@ namespace TPSLRawDataSimulator
                 var variantLengthVariableParamExprList = new Dictionary<string, ParameterExpression>();
 
                 // multi used variable expr
-                var isBigEndianExpr = Expression.Constant(structToRaw == null? !BitConverter.IsLittleEndian : structToRaw.Endian == Endian.BigEndian);
+                var isBigEndianExpr = Expression.Constant(structToRaw == null ? !BitConverter.IsLittleEndian : structToRaw.Endian == Endian.BigEndian);
 
                 inBlockExpressions.Add(Expression.Assign(returnObjExp, Expression.New(type)));
 
@@ -71,9 +71,20 @@ namespace TPSLRawDataSimulator
                         if (variantLengthVariableParamExprList.TryGetValue(variableKey, out var variableLengthExpr))
                         {
                             if (marshalAs == null)
-                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayFromStreamMethodInfo, streamVariableExpr, Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr),mType)));
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayFromStreamMethodInfo, streamVariableExpr, Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr), mType)));
                             else
-                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert( Expression.Call(null, getArrayMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType, typeof(UnmanagedType)), Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr),mType)));
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType, typeof(UnmanagedType)), Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr), mType)));
+                        }
+                        else if (mType.GetCustomAttribute<MemberIndexAttribute>() != null && mType.GetCustomAttribute<MemberIndexAttribute>().SizeCount > 0)
+                        {
+                            variableLengthExpr = Expression.Variable(typeof(uint), variableKey);
+                            var variableLength = mType.GetCustomAttribute<MemberIndexAttribute>().SizeCount;    
+                            variantLengthVariableParamExprList.Add(variableKey, variableLengthExpr);
+
+                            if (marshalAs == null)
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayFromStreamMethodInfo, streamVariableExpr, Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr), mType)));
+                            else
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType, typeof(UnmanagedType)), Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr), mType)));
                         }
                         else
                         {
@@ -84,21 +95,21 @@ namespace TPSLRawDataSimulator
                     {
                         var variablelength = Expression.Variable(mType, mName + "Length");
                         variantLengthVariableParamExprList.Add(mName + "Length", variablelength);
-                        inBlockExpressions.Add(Expression.Assign(variablelength, Expression.Convert(Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mType), Expression.Constant(structToRaw == null?!BitConverter.IsLittleEndian : structToRaw.Endian == Endian.BigEndian)),mType)));
-                        inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp,mInfo) , variablelength));
+                        inBlockExpressions.Add(Expression.Assign(variablelength, Expression.Convert(Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mType), Expression.Constant(structToRaw == null ? !BitConverter.IsLittleEndian : structToRaw.Endian == Endian.BigEndian)), mType)));
+                        inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), variablelength));
                     }
                     else
                     {
                         if (marshalAs == null)
-                            inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mType, typeof(Type)), isBigEndianExpr),mType)));
+                            inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mType, typeof(Type)), isBigEndianExpr), mType)));
                         else
-                            inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getTypedObjMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType, typeof(UnmanagedType)), Expression.Constant(mType, typeof(Type)), isBigEndianExpr),mType)));
+                            inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getTypedObjMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType, typeof(UnmanagedType)), Expression.Constant(mType, typeof(Type)), isBigEndianExpr), mType)));
                     }
                 }
                 var blockDefineContext = variantLengthVariableParamExprList.Values.ToArray().Concat(new[] { returnObjExp });
-                inBlockExpressions.Add(Expression.Convert(returnObjExp,typeof(object)));
+                inBlockExpressions.Add(Expression.Convert(returnObjExp, typeof(object)));
                 var block = Expression.Block(blockDefineContext, inBlockExpressions);
-                func = Expression.Lambda<Func<Stream,object>>(block, new[] { streamVariableExpr }).Compile();
+                func = Expression.Lambda<Func<Stream, object>>(block, new[] { streamVariableExpr }).Compile();
                 this.DeserializeExpressionStorage.TryAdd(type, func);
             }
             var result = func.Invoke(serializationStream);

@@ -600,5 +600,9 @@ namespace TPSLRawDataSimulator
     {
         public ushort Index { get; set; }
         public string LengthTo { get; set; }
+        /// <summary>
+        /// spec the Array Lenth. Length to will effect the raw layout of data. but this will be hard code length.
+        /// </summary>
+        public uint SizeCount { get; set; }
     }
 }
