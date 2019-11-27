@@ -45,6 +45,9 @@ namespace TPSLRawDataSimulator
 
                 foreach (MemberInfo mInfo in mInfos)
                 {
+                    if (mInfo.GetCustomAttribute<RawIgnoreAttribute>() != null)
+                        continue;
+
                     Type mType = null;
                     PropertyInfo pInfo = null;
                     FieldInfo fInfo = null;
@@ -58,7 +61,8 @@ namespace TPSLRawDataSimulator
                         fInfo = (mInfo as FieldInfo);
                         mType = fInfo.FieldType;
                     }
-
+                    else
+                        continue;
 
                     //var mDeclareType = (pInfo != null ? pInfo.PropertyType : fInfo != null ? fInfo.FieldType : null);
                     var elementType = mType.GetElementType();
@@ -78,7 +82,7 @@ namespace TPSLRawDataSimulator
                         else if (mType.GetCustomAttribute<MemberIndexAttribute>() != null && mType.GetCustomAttribute<MemberIndexAttribute>().SizeCount > 0)
                         {
                             variableLengthExpr = Expression.Variable(typeof(uint), variableKey);
-                            var variableLength = mType.GetCustomAttribute<MemberIndexAttribute>().SizeCount;    
+                            var variableLength = mType.GetCustomAttribute<MemberIndexAttribute>().SizeCount;
                             variantLengthVariableParamExprList.Add(variableKey, variableLengthExpr);
 
                             if (marshalAs == null)
@@ -116,7 +120,6 @@ namespace TPSLRawDataSimulator
             return result;
         }
 
-
         /// <summary>
         /// 
         /// </summary>
@@ -142,6 +145,9 @@ namespace TPSLRawDataSimulator
                 pInfos.Sort(new GenericComparer<MemberInfo, int>(x => x.GetCustomAttribute<MemberIndexAttribute>().Index));
                 foreach (var memberInfo in pInfos)
                 {
+                    if (memberInfo.GetCustomAttribute<RawIgnoreAttribute>() != null)
+                        continue;
+
                     Type memberReturnType = null;
 
                     if ((memberInfo.MemberType & MemberTypes.Field) == MemberTypes.Field)
@@ -288,4 +294,37 @@ namespace TPSLRawDataSimulator
             return loop;
         }
     }
+
+
+
+
+    public enum Endian
+    {
+        BigEndian,
+        LittleEndian
+    }
+
+    /// <summary>
+    /// Serialization: Endian is for target buffer.
+    /// Deserialization: Endian is for source buffer.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+    public class StructToRawAttribute : Attribute
+    {
+        public Endian Endian { get; set; }
+    }
+
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+    public class MemberIndexAttribute : Attribute
+    {
+        public ushort Index { get; set; }
+        public string LengthTo { get; set; }
+        /// <summary>
+        /// spec the Array Lenth. Length to will effect the raw layout of data. but this will be hard code length.
+        /// </summary>
+        public uint SizeCount { get; set; }
+    }
+
+    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
+    public class RawIgnoreAttribute : Attribute { }
 }

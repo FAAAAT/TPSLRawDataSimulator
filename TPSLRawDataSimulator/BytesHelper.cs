@@ -577,32 +577,14 @@ namespace TPSLRawDataSimulator
         //        if ()
         //    }
         //}
-    }
 
-    public enum Endian
-    {
-        BigEndian,
-        LittleEndian
-    }
-
-    /// <summary>
-    /// Serialization: Endian is for target buffer.
-    /// Deserialization: Endian is for source buffer.
-    /// </summary>
-    [AttributeUsage(AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
-    public class StructToRawAttribute : Attribute
-    {
-        public Endian Endian { get; set; }
-    }
-
-    [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
-    public class MemberIndexAttribute : Attribute
-    {
-        public ushort Index { get; set; }
-        public string LengthTo { get; set; }
-        /// <summary>
-        /// spec the Array Lenth. Length to will effect the raw layout of data. but this will be hard code length.
-        /// </summary>
-        public uint SizeCount { get; set; }
+        
+        public static int BCDToInt32(byte bcd) {
+            var result = 0;
+            result *= 100;
+            result += (10 * (bcd >> 4));
+            result += bcd & 0xf;
+            return result;
+        }
     }
 }

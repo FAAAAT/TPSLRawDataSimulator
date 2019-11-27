@@ -119,7 +119,7 @@ namespace TPSLRawDataSimulator
         }
 
         /// <summary>
-        /// data_body
+        /// type 0x01 data_body
         /// </summary>
         [StructToRaw(Endian = Endian.LittleEndian)]
         public struct TPSLDataSegement_Type1
@@ -140,7 +140,7 @@ namespace TPSLRawDataSimulator
             [MemberIndex(Index = 40)]
             public byte Battery_Level;
             [MemberIndex(Index = 50)]
-            public byte Singal_Strength;
+            public byte Signal_Strength;
             [MemberIndex(Index = 60)]
             public byte[] Sample_Data;
 
@@ -152,11 +152,7 @@ namespace TPSLRawDataSimulator
                 var results = new List<int>();
                 foreach (byte bcd in this.Send_Time)
                 {
-                    var result = 0;
-                    result *= 100;
-                    result += (10 * (bcd >> 4));
-                    result += bcd & 0xf;
-                    results.Add(result);
+                    results.Add(BytesHelper.BCDToInt32(bcd));
                 }
                 var year = 0;
                 if (results[0] - DateTime.Now.Year % 100 == 99)
@@ -170,6 +166,102 @@ namespace TPSLRawDataSimulator
                 return new DateTime(year, results[1], results[2], results[3], results[4], results[5]);
             }
         }
+
+        /// <summary>
+        /// for device_type 0x01,0x02,0x03,0x04
+        /// </summary>
+        public struct TPSLSingleChannelDeviceSampleDataUnit {
+            public DeviceWarningState DeviceState;   // Higher4Bits
+            public DataUnit DataUnit; //Lower4Bits
+            public double Data; // BCD Encode. 
+            //
+            // when DataUnit is not Centigrade.
+            // first byte higher4bits is the significant digit count of the fractional part. lower4bits is the first digit of 5 significant digits. 
+            // second byte higher4bits is the second digit of 5 significant digits. lower4bits is the third digit of 5 significant digits.
+            // etc...
+            //
+            // when Dataunit is Centigrade.
+            // first byte higher4bits is the sign of the float. others are the float data.
+            // I think this protocal is bullshit! Does the author do not know the half precision float??? It can resolve this problem with just 3 bytes and no fucking BCD encode!
+            //
+
+
+            public void FillObjectFromBytes(byte[] bytes) 
+            {
+                if (bytes.Length != 4)
+                    throw new ArgumentException($"Data must have 4 bytes. Actually have :{bytes.Length} bytes","bytes");
+                var data = BytesHelper.BCDToInt32(bytes[0]);
+                this.DataUnit = (DataUnit)(data % 10);
+                this.DeviceState = (DeviceWarningState)(data / 10);
+
+                if (DataUnit != DataUnit.Centigrade)
+                {
+                    var dataData = "";
+                    data = BytesHelper.BCDToInt32(bytes[1]);
+                    var fractionalPartCount = data / 10;
+                    dataData += data % 10;
+                    data = BytesHelper.BCDToInt32(bytes[2]);
+                    dataData += data;
+                    data = BytesHelper.BCDToInt32(bytes[3]);
+                    dataData += data;
+                    if (fractionalPartCount != 0)
+                        dataData.Insert(dataData.Length - fractionalPartCount, ".");
+                    if (double.TryParse(dataData, out var result))
+                        this.Data = result;
+                    else
+                        throw new Exception($"The data bytes can not transform to double! See data:{dataData}");
+                }
+                else 
+                {
+                    data = BytesHelper.BCDToInt32(bytes[1]);
+                    var fractionalPartCount = data / 10;
+                    var signed = data % 10;
+                    var dataData = "";
+                    data = BytesHelper.BCDToInt32(bytes[2]);
+                    dataData += data;
+                    data = BytesHelper.BCDToInt32(bytes[3]);
+                    dataData += data;
+                    if (fractionalPartCount != 0)
+                        dataData.Insert(dataData.Length - fractionalPartCount, ".");
+                    if (signed == 1)
+                        dataData = "-" + dataData;
+                    else if (signed > 0)
+                        throw new Exception("unknown data when convert centigrade data.");
+                    if (double.TryParse(dataData, out var result))
+                        this.Data = result;
+                    else
+                        throw new Exception($"The data bytes can not transform to double! See data:{dataData}");
+
+                }
+            }
+        }
+
+        [StructToRaw(Endian = Endian.LittleEndian)]
+        /// <summary>
+        /// for device_type 0x07
+        /// </summary>
+        public struct TPSLSmokeSensor {
+            [MemberIndex(Index = 0)]
+            [MarshalAs(UnmanagedType.U1)]
+            public SmokeWarningState WarningState;
+            [MarshalAs(UnmanagedType.U1)]
+            public SmokeDevicePowerState PowerState;
+        }
+        
+        /// <summary>
+        /// for device_type 0x08
+        /// </summary>
+        public struct TPSLUnKnownDevice {
+            public UnknownDeviceState ControlState;
+            public UnknownDeviceBallValveState BallValveState;
+
+            public void FillObjectFromByte(byte data) {
+                var bcd = BytesHelper.BCDToInt32(data);
+                this.ControlState = (UnknownDeviceState)(bcd / 10);
+                this.BallValveState = (UnknownDeviceBallValveState)(bcd % 10);
+            }
+        }
+
 
 
 
@@ -185,6 +277,20 @@ namespace TPSLRawDataSimulator
 
 
 
+        /// <summary>
+        /// type 0x06 data_body
+        /// </summary>
+        [StructToRaw(Endian=Endian.LittleEndian)]
+        public struct TPSLDataSegment_Type6 {
+            [MemberIndex(Index=0)]
+            public ExecResult EXEC_RESULT;
+        }
+
+
+        public enum ExecResult {
+            Successed,
+            Failed
+        }
         public enum FrameType
         {
             Data = 0x01,
@@ -208,6 +314,62 @@ namespace TPSLRawDataSimulator
             WireLessDigit
 
         }
+
+        public enum DeviceWarningState {
+            Normal,
+            LowerLimitWarning,
+            UpperLimitWarning,
+            Error,
+            DynamicThresholdWarning,
+            CollisionWarning,
+            LeaningWarning,
+            FlowWarning,
+            LeakageWarning,
+            LowPowerWarning
+        }
+
+        public enum DataUnit {
+            MPa=1,
+            Bar,
+            KPa,
+            M, 
+            Centigrade,
+            CubicMetresPerHour,
+            Degree
+        }
+
+        public enum SmokeWarningState
+        {
+            Normal,
+            Warning,
+        }
+
+        public enum SmokeDevicePowerState
+        {
+            Normal,
+            LowPower
+        }
+
+        public enum UnknownDeviceState
+        {
+            CanNotBeControled,
+            CanControledByTemperatureSensor,
+            CanControledByPressureSensor
+        }
+        public enum UnknownDeviceBallValveState {
+            Closed,
+            OpenedTenPercent,
+            OpenedTwentyPercent,
+            OpenedThirtyPercent,
+            OpenedFourtyPercent,
+            OpenedFiftyPercent,
+            OpenedSixtyPercent,
+            OpenedSeventyPercent,
+            OpenedEightyPercent,
+            OpenedNinetyPercent,
+            OpenedMaximum
+        }
+
 
         public static ushort Calculator_CRC16(byte[] buf, int length)
         {
