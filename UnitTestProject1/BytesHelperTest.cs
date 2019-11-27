@@ -134,36 +134,36 @@ namespace UnitTestProject1
             #region sbyte类型
             //大端
             buffer = new byte[] { 0x7F };
-            var sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), true);
+            var sbyteResult = Convert.ToSByte(BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), true));
             Assert.AreEqual(sbyte.MaxValue, sbyteResult);
             //小端
             buffer = new byte[] { 0x01 };
-            sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false);
+            sbyteResult = Convert.ToSByte(BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false));
             Assert.AreEqual((sbyte)1, sbyteResult);
             //小端 位数不够
             Assert.ThrowsException<ArgumentException>(() =>
             {
                 buffer = new byte[] { };
-                sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false);
+                sbyteResult = Convert.ToSByte(BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false));
                 Assert.AreEqual((sbyte)1, sbyteResult);
             });
             //小端 位数不够 补0
             buffer = new byte[] { };
             buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(sbyte), false);
-            sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false);
+            sbyteResult = Convert.ToSByte(BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false));
             Assert.AreEqual((sbyte)0, sbyteResult);
             //小端 位数 过多异常
             Assert.ThrowsException<ArgumentException>(() =>
             {
                 buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
-                sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false);
+                sbyteResult = Convert.ToSByte(BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false));
                 Assert.AreEqual((sbyte)1, sbyteResult);
 
             });
             // 小端 位数过多 截断处理
             buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
             buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(sbyte), false);
-            sbyteResult = (sbyte)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false);
+            sbyteResult = Convert.ToSByte(BytesHelper.GetTypedObjectFromBytes(buffer, typeof(sbyte), false));
             Assert.AreEqual((sbyte)1, sbyteResult);
             #endregion
 
@@ -345,6 +345,42 @@ namespace UnitTestProject1
             buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(char), false);
             charResult = (char)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(char), false);
             Assert.AreEqual((char)1, charResult);
+            #endregion
+
+            #region bool类型
+            ////大端
+            //buffer = new byte[] { 0xFF, 0xFF };
+            //var boolResult = (bool)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(bool), true);
+            //Assert.AreEqual(bool.MaxValue, boolResult);
+            ////小端
+            //buffer = new byte[] { 0x01, 0x00 };
+            //boolResult = (bool)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(bool), false);
+            //Assert.AreEqual((bool)1, boolResult);
+            ////小端 位数不够
+            //Assert.ThrowsException<ArgumentException>(() =>
+            //{
+            //    buffer = new byte[] { 0x01 };
+            //    boolResult = (bool)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(bool), false);
+            //    Assert.AreEqual((bool)1, boolResult);
+            //});
+            ////小端 位数不够 补0
+            //buffer = new byte[] { 0x01 };
+            //buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(bool), false);
+            //boolResult = (bool)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(bool), false);
+            //Assert.AreEqual((bool)1, boolResult);
+            ////小端 位数 过多异常
+            //Assert.ThrowsException<ArgumentException>(() =>
+            //{
+            //    buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            //    boolResult = (bool)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(bool), false);
+            //    Assert.AreEqual((bool)1, boolResult);
+
+            //});
+            //// 小端 位数过多 截断处理
+            //buffer = new byte[] { 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01 };
+            //buffer = BytesHelper.DeserializeAutoPaddingOrTruncate(buffer, typeof(bool), false);
+            //boolResult = (bool)BytesHelper.GetTypedObjectFromBytes(buffer, typeof(bool), false);
+            //Assert.AreEqual((bool)1, boolResult);
             #endregion
         }
 

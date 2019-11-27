@@ -348,7 +348,6 @@ namespace TPSLRawDataSimulator
                 result = result.Reverse().ToArray();
             return result;
 
-
         }
 
         /// <summary>
