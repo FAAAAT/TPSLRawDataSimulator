@@ -247,16 +247,18 @@ namespace TPSLRawDataSimulator
                 return sizeof(UInt64);
             if (t == typeof(bool) || t == typeof(Boolean))
                 return sizeof(bool);
-            
+            if (t.IsEnum)
+                return sizeof(int);
             return -1;
         }
 
-        public static int GetBytesCountOfArray(Array array) {
+        public static int GetBytesCountOfArray(Array array)
+        {
             var elementType = array.GetType().GetElementType();
             var elementLengthInByte = GetBytesOfType(elementType);
             if (elementLengthInByte < 0)
             {
-                throw new ArgumentException( $"Element type:{elementType} of this array is not a fix length type.","array");
+                throw new ArgumentException($"Element type:{elementType} of this array is not a fix length type.", "array");
             }
             return array.Length * elementLengthInByte;
         }
@@ -379,7 +381,7 @@ namespace TPSLRawDataSimulator
             }
             if (objType == typeof(sbyte))
             {
-                return bytes[0];
+                return (sbyte)bytes[0];
             }
             if (objType == typeof(short))
             {
@@ -413,6 +415,10 @@ namespace TPSLRawDataSimulator
             {
                 return BitConverter.ToDouble(bytes);
             }
+            if (objType.IsEnum)
+            {
+                return Enum.ToObject(objType,BitConverter.ToInt32(bytes));
+            }
             throw new NotImplementedException();
 
         }
@@ -432,7 +438,8 @@ namespace TPSLRawDataSimulator
         /// <param name="objType"></param>
         /// <param name="isBigEndian"></param>
         /// <returns></returns>
-        public static object GetTypedObjectFromStream(Stream stream, UnmanagedType marshalAsType, Type objType, bool isBigEndian) {
+        public static object GetTypedObjectFromStream(Stream stream, UnmanagedType marshalAsType, Type objType, bool isBigEndian)
+        {
             var marshalBytes = GetBytesOfType(marshalAsType);
             var typeDeclaredBytes = GetBytesOfType(objType);
             var buffer = new byte[marshalBytes];
@@ -450,12 +457,12 @@ namespace TPSLRawDataSimulator
         /// <param name="lengthInByte"></param>
         /// <param name="isBigEndian"></param>
         /// <returns></returns>
-        public static Array GetArrayFromStream(Stream stream, Type elementType, int lengthInByte, bool isBigEndian)
+        public static Array GetArrayFromStream(Stream stream, Type elementType, long lengthInByte, bool isBigEndian)
         {
             var typeBytes = GetBytesOfType(elementType);
             if (lengthInByte % typeBytes != 0)
             {
-                throw new ArgumentException($"Element type ${elementType.FullName} of array is not fit with the length of bytes ${lengthInByte}");
+                throw new ArgumentException($"Element type {elementType.FullName} of array is not fit with the length of bytes {lengthInByte}");
             }
             var arrayLength = lengthInByte / typeBytes;
             var result = Array.CreateInstance(elementType, arrayLength);
@@ -464,6 +471,19 @@ namespace TPSLRawDataSimulator
                 result.SetValue(GetTypedObjectFromStream(stream, elementType, isBigEndian), i);
             }
             return result;
+        }
+
+        /// <summary>
+        /// this will convert all remain bytes to target array.
+        /// </summary>
+        /// <param name="stream"></param>
+        /// <param name="elementType"></param>
+        /// <param name="isBigEndian"></param>
+        /// <returns></returns>
+        public static Array GetArrayFromStream(Stream stream, Type elementType, bool isBigEndian)
+        {
+            var length = stream.Length - stream.Position;
+            return GetArrayFromStream(stream, elementType, length, isBigEndian);
         }
 
         /// <summary>
@@ -476,7 +496,7 @@ namespace TPSLRawDataSimulator
         /// <param name="isBigEndian"></param>
         /// <returns></returns>
         //some truncation problem
-        public static Array GetArrayFromStream(Stream stream, UnmanagedType marshalAsType, Type objType, int lengthInByte, bool isBigEndian)
+        public static Array GetArrayFromStream(Stream stream, UnmanagedType marshalAsType, Type objType, long lengthInByte, bool isBigEndian)
         {
             var marshalBytes = GetBytesOfType(marshalAsType);
             var typeDeclaredBytes = GetBytesOfType(objType);
@@ -485,20 +505,26 @@ namespace TPSLRawDataSimulator
                 throw new ArgumentException($"Element type ${objType.FullName} of array is not fit with the length of bytes ${lengthInByte}");
             }
             var arrayLength = lengthInByte / marshalBytes;
-            var byteResult = Array.CreateInstance(objType,arrayLength);
+            var byteResult = Array.CreateInstance(objType, arrayLength);
             //padding 0 for trancatedbytes.
             var readoffset = isBigEndian ? typeDeclaredBytes - marshalBytes : 0;
-            
+
             for (var i = 0; i < arrayLength; i++)
             {
                 var buffer = new byte[marshalBytes];
                 var readedLength = stream.Read(buffer, 0, marshalBytes);
                 if (readedLength < marshalBytes)
                     throw new Exception("stream ended unexpeced");
-                buffer = DeserializeAutoPaddingOrTruncate(buffer,objType,isBigEndian);
-                byteResult.SetValue(GetTypedObjectFromBytes(buffer,objType,isBigEndian), i);
+                buffer = DeserializeAutoPaddingOrTruncate(buffer, objType, isBigEndian);
+                byteResult.SetValue(GetTypedObjectFromBytes(buffer, objType, isBigEndian), i);
             }
             return byteResult;
+        }
+
+        public static Array GetArrayFromStream(Stream stream, UnmanagedType marshalAsType, Type objType, bool isBigEndian)
+        {
+            var length = stream.Length - stream.Position;
+            return GetArrayFromStream(stream, marshalAsType, objType, length, isBigEndian);
         }
 
         /// <summary>
@@ -535,7 +561,7 @@ namespace TPSLRawDataSimulator
         public static byte[] DeserializeAutoPaddingOrTruncate(byte[] bytes, Type objType, bool isBigEndian)
         {
             var typeBytes = GetBytesOfType(objType);
-            //truncate
+            //padding
             if (typeBytes > bytes.Length)
             {
                 if (isBigEndian)
@@ -543,7 +569,7 @@ namespace TPSLRawDataSimulator
                 else
                     return bytes.Concat(new byte[typeBytes - bytes.Length]).ToArray();
             }
-            //padding
+            //truncate
             else if (typeBytes < bytes.Length)
             {
                 if (isBigEndian)
@@ -552,7 +578,8 @@ namespace TPSLRawDataSimulator
                     bytes.CopyTo(result, typeBytes - bytes.Length);
                     return result;
                 }
-                else {
+                else
+                {
                     var result = new Span<byte>(bytes).Slice(0, typeBytes);
                     return result.ToArray();
                 }
@@ -578,13 +605,31 @@ namespace TPSLRawDataSimulator
         //    }
         //}
 
-        
-        public static int BCDToInt32(byte bcd) {
+
+        public static int BCDToInt32(byte bcd)
+        {
             var result = 0;
             result *= 100;
             result += (10 * (bcd >> 4));
             result += bcd & 0xf;
             return result;
+        }
+
+        public static ushort Calculator_CRC16(byte[] buf, int length)
+        {
+            ushort value, crc_reg = 0xFFFF;
+            for (ushort i = 0; i < length; i++)
+            {
+                value = (ushort)(buf[i] << 8);
+                for (ushort j = 0; j < 8; j++)
+                {
+                    if ((ushort)(crc_reg ^ value) < 0)
+                        crc_reg = (ushort)((crc_reg << 1) ^ 0x1021);
+                    else
+                        crc_reg <<= 1; value <<= 1;
+                }
+            }
+            return crc_reg;
         }
     }
 }

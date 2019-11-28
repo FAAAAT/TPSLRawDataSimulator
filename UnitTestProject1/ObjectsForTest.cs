@@ -180,92 +180,92 @@ namespace UnitTestProject1
     public struct ArrayValueObject
     {
         [MemberIndex(Index = 7, LengthTo = "fByteArray")]
-        public int fByteArrayLength;
+        public long fByteArrayLength;
         [MemberIndex(Index = 8)]
         public byte[] fByteArray;
         [MemberIndex(Index = 9, LengthTo = "fIntArray")]
-        public int fIntArrayLength;
+        public long fIntArrayLength;
         [MemberIndex(Index = 10)]
         public int[] fIntArray;
         [MemberIndex(Index = 19, LengthTo = "fUIntArray")]
-        public int fUIntArrayLength;
+        public long fUIntArrayLength;
         [MemberIndex(Index = 20)]
         public uint[] fUIntArray;
         [MemberIndex(Index = 29, LengthTo = "fLongArray")]
-        public int fLongArrayLength;
+        public long fLongArrayLength;
         [MemberIndex(Index = 30)]
         public long[] fLongArray;
         [MemberIndex(Index = 39, LengthTo = "fULongArray")]
-        public int fULongArrayLength;
+        public long fULongArrayLength;
         [MemberIndex(Index = 40)]
         public ulong[] fULongArray;
         [MemberIndex(Index = 49, LengthTo = "fShortArray")]
-        public int fShortArrayLength;
+        public long fShortArrayLength;
         [MemberIndex(Index = 50)]
         public short[] fShortArray;
         [MemberIndex(Index = 59, LengthTo = "fUShortArray")]
-        public int fUShortArrayLength;
+        public long fUShortArrayLength;
         [MemberIndex(Index = 60)]
         public ushort[] fUShortArray;
         [MemberIndex(Index = 69, LengthTo = "fFloatArray")]
-        public int fFloatArrayLength;
+        public long fFloatArrayLength;
         [MemberIndex(Index = 70)]
         public float[] fFloatArray;
         [MemberIndex(Index = 79, LengthTo = "fDoubleArray")]
-        public int fDoubleArrayLength;
+        public long fDoubleArrayLength;
         [MemberIndex(Index = 80)]
         public double[] fDoubleArray;
         [MemberIndex(Index = 89, LengthTo = "fCharArray")]
-        public int fCharArrayLength;
+        public long fCharArrayLength;
         [MemberIndex(Index = 90)]
         public char[] fCharArray;
         [MemberIndex(Index = 99, LengthTo = "fBoolArray")]
-        public int fBoolArrayLength;
+        public long fBoolArrayLength;
         [MemberIndex(Index = 100)]
         public bool[] fBoolArray;
 
         [MemberIndex(Index = 107, LengthTo = "pByteArray")]
-        public int pByteArrayLength;
+        public long pByteArrayLength;
         [MemberIndex(Index = 108)]
         public byte[] pByteArray { get; set; }
         [MemberIndex(Index = 109, LengthTo = "pIntArray")]
-        public int pIntArrayLength;
+        public long pIntArrayLength;
         [MemberIndex(Index = 110)]
         public int[] pIntArray { get; set; }
         [MemberIndex(Index = 119, LengthTo = "pUIntArray")]
-        public int pUIntArrayLength;
+        public long pUIntArrayLength;
         [MemberIndex(Index = 120)]
         public uint[] pUIntArray { get; set; }
         [MemberIndex(Index = 129, LengthTo = "pLongArray")]
-        public int pLongArrayLength;
+        public long pLongArrayLength;
         [MemberIndex(Index = 130)]
         public long[] pLongArray { get; set; }
         [MemberIndex(Index = 139, LengthTo = "pULongArray")]
-        public int pULongArrayLength;
+        public long pULongArrayLength;
         [MemberIndex(Index = 140)]
         public ulong[] pULongArray { get; set; }
         [MemberIndex(Index = 149, LengthTo = "pShortArray")]
-        public int pShortArrayLength;
+        public long pShortArrayLength;
         [MemberIndex(Index = 150)]
         public short[] pShortArray { get; set; }
         [MemberIndex(Index = 159, LengthTo = "pUShortArray")]
-        public int pUShortArrayLength;
+        public long pUShortArrayLength;
         [MemberIndex(Index = 160)]
         public ushort[] pUShortArray { get; set; }
         [MemberIndex(Index = 169, LengthTo = "pFloatArray")]
-        public int pFloatArrayLength;
+        public long pFloatArrayLength;
         [MemberIndex(Index = 170)]
         public float[] pFloatArray { get; set; }
         [MemberIndex(Index = 179, LengthTo = "pDoubleArray")]
-        public int pDoubleArrayLength;
+        public long pDoubleArrayLength;
         [MemberIndex(Index = 180)]
         public double[] pDoubleArray { get; set; }
         [MemberIndex(Index = 189, LengthTo = "pCharArray")]
-        public int pCharArrayLength;
+        public long pCharArrayLength;
         [MemberIndex(Index = 190)]
         public char[] pCharArray { get; set; }
         [MemberIndex(Index = 199, LengthTo = "pBoolArray")]
-        public int pBoolArrayLength;
+        public long pBoolArrayLength;
         [MemberIndex(Index = 200)]
         public bool[] pBoolArray { get; set; }
 
@@ -505,92 +505,92 @@ namespace UnitTestProject1
     public struct ArrayValueSpecifiedEndianObject
     {
         [MemberIndex(Index = 7, LengthTo = "fByteArray")]
-        public int fByteArrayLength;
+        public long fByteArrayLength;
         [MemberIndex(Index = 8)]
         public byte[] fByteArray;
         [MemberIndex(Index = 9, LengthTo = "fIntArray")]
-        public int fIntArrayLength;
+        public long fIntArrayLength;
         [MemberIndex(Index = 10)]
         public int[] fIntArray;
         [MemberIndex(Index = 19, LengthTo = "fUIntArray")]
-        public int fUIntArrayLength;
+        public long fUIntArrayLength;
         [MemberIndex(Index = 20)]
         public uint[] fUIntArray;
         [MemberIndex(Index = 29, LengthTo = "fLongArray")]
-        public int fLongArrayLength;
+        public long fLongArrayLength;
         [MemberIndex(Index = 30)]
         public long[] fLongArray;
         [MemberIndex(Index = 39, LengthTo = "fULongArray")]
-        public int fULongArrayLength;
+        public long fULongArrayLength;
         [MemberIndex(Index = 40)]
         public ulong[] fULongArray;
         [MemberIndex(Index = 49, LengthTo = "fShortArray")]
-        public int fShortArrayLength;
+        public long fShortArrayLength;
         [MemberIndex(Index = 50)]
         public short[] fShortArray;
         [MemberIndex(Index = 59, LengthTo = "fUShortArray")]
-        public int fUShortArrayLength;
+        public long fUShortArrayLength;
         [MemberIndex(Index = 60)]
         public ushort[] fUShortArray;
         [MemberIndex(Index = 69, LengthTo = "fFloatArray")]
-        public int fFloatArrayLength;
+        public long fFloatArrayLength;
         [MemberIndex(Index = 70)]
         public float[] fFloatArray;
         [MemberIndex(Index = 79, LengthTo = "fDoubleArray")]
-        public int fDoubleArrayLength;
+        public long fDoubleArrayLength;
         [MemberIndex(Index = 80)]
         public double[] fDoubleArray;
         [MemberIndex(Index = 89, LengthTo = "fCharArray")]
-        public int fCharArrayLength;
+        public long fCharArrayLength;
         [MemberIndex(Index = 90)]
         public char[] fCharArray;
         [MemberIndex(Index = 99, LengthTo = "fBoolArray")]
-        public int fBoolArrayLength;
+        public long fBoolArrayLength;
         [MemberIndex(Index = 100)]
         public bool[] fBoolArray;
 
         [MemberIndex(Index = 107, LengthTo = "pByteArray")]
-        public int pByteArrayLength;
+        public long pByteArrayLength;
         [MemberIndex(Index = 108)]
         public byte[] pByteArray { get; set; }
         [MemberIndex(Index = 109, LengthTo = "pIntArray")]
-        public int pIntArrayLength;
+        public long pIntArrayLength;
         [MemberIndex(Index = 110)]
         public int[] pIntArray { get; set; }
         [MemberIndex(Index = 119, LengthTo = "pUIntArray")]
-        public int pUIntArrayLength;
+        public long pUIntArrayLength;
         [MemberIndex(Index = 120)]
         public uint[] pUIntArray { get; set; }
         [MemberIndex(Index = 129, LengthTo = "pLongArray")]
-        public int pLongArrayLength;
+        public long pLongArrayLength;
         [MemberIndex(Index = 130)]
         public long[] pLongArray { get; set; }
         [MemberIndex(Index = 139, LengthTo = "pULongArray")]
-        public int pULongArrayLength;
+        public long pULongArrayLength;
         [MemberIndex(Index = 140)]
         public ulong[] pULongArray { get; set; }
         [MemberIndex(Index = 149, LengthTo = "pShortArray")]
-        public int pShortArrayLength;
+        public long pShortArrayLength;
         [MemberIndex(Index = 150)]
         public short[] pShortArray { get; set; }
         [MemberIndex(Index = 159, LengthTo = "pUShortArray")]
-        public int pUShortArrayLength;
+        public long pUShortArrayLength;
         [MemberIndex(Index = 160)]
         public ushort[] pUShortArray { get; set; }
         [MemberIndex(Index = 169, LengthTo = "pFloatArray")]
-        public int pFloatArrayLength;
+        public long pFloatArrayLength;
         [MemberIndex(Index = 170)]
         public float[] pFloatArray { get; set; }
         [MemberIndex(Index = 179, LengthTo = "pDoubleArray")]
-        public int pDoubleArrayLength;
+        public long pDoubleArrayLength;
         [MemberIndex(Index = 180)]
         public double[] pDoubleArray { get; set; }
         [MemberIndex(Index = 189, LengthTo = "pCharArray")]
-        public int pCharArrayLength;
+        public long pCharArrayLength;
         [MemberIndex(Index = 190)]
         public char[] pCharArray { get; set; }
         [MemberIndex(Index = 199, LengthTo = "pBoolArray")]
-        public int pBoolArrayLength;
+        public long pBoolArrayLength;
         [MemberIndex(Index = 200)]
         public bool[] pBoolArray { get; set; }
 

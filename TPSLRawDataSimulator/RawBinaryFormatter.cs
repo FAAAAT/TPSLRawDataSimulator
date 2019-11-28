@@ -2,7 +2,9 @@
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -25,12 +27,16 @@ namespace TPSLRawDataSimulator
                 //sort the member info by member index.
                 var mInfos = type.GetMembers(BindingFlags.Public | BindingFlags.Instance).Where(x => (x.MemberType & (MemberTypes.Field | MemberTypes.Property)) != 0).ToList();
                 //var createInstanceMethodInfo = type.GetConstructor(Type.EmptyTypes);
+                mInfos = mInfos.Where(x => x.GetCustomAttribute<RawIgnoreAttribute>() == null).ToList();
                 mInfos.Sort(new GenericComparer<MemberInfo, int>(x => x.GetCustomAttribute<MemberIndexAttribute>().Index));
 
                 var getTypedObjFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetTypedObjectFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(Type), typeof(bool) }, null);
-                var getArrayFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(Type), typeof(int), typeof(bool) }, null);
-                var getArrayMarshalAsFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(UnmanagedType), typeof(Type), typeof(int), typeof(bool) }, null);
+                var getArrayFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(Type), typeof(long), typeof(bool) }, null);
+                var getArrayMarshalAsFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(UnmanagedType), typeof(Type), typeof(long), typeof(bool) }, null);
+                var getArrayFromStreamNoLengthMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(Type), typeof(bool) }, null);
+                var getArrayMarshalAsFromStreamNoLengthMethodInfo = typeof(BytesHelper).GetMethod("GetArrayFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(UnmanagedType), typeof(Type), typeof(bool) }, null);
                 var getTypedObjMarshalAsFromStreamMethodInfo = typeof(BytesHelper).GetMethod("GetTypedObjectFromStream", BindingFlags.Static | BindingFlags.Public, Type.DefaultBinder, new[] { typeof(Stream), typeof(UnmanagedType), typeof(Type), typeof(bool) }, null);
+
 
                 // block temporary variable expr
                 List<Expression> inBlockExpressions = new List<Expression>();
@@ -45,9 +51,6 @@ namespace TPSLRawDataSimulator
 
                 foreach (MemberInfo mInfo in mInfos)
                 {
-                    if (mInfo.GetCustomAttribute<RawIgnoreAttribute>() != null)
-                        continue;
-
                     Type mType = null;
                     PropertyInfo pInfo = null;
                     FieldInfo fInfo = null;
@@ -66,7 +69,7 @@ namespace TPSLRawDataSimulator
 
                     //var mDeclareType = (pInfo != null ? pInfo.PropertyType : fInfo != null ? fInfo.FieldType : null);
                     var elementType = mType.GetElementType();
-                    var marshalAs = mType.GetCustomAttribute<MarshalAsAttribute>();
+                    var marshalAs = mInfo.GetCustomAttribute<MarshalAsAttribute>();
 
                     if (mType.IsArray)
                     {
@@ -77,18 +80,24 @@ namespace TPSLRawDataSimulator
                             if (marshalAs == null)
                                 inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayFromStreamMethodInfo, streamVariableExpr, Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr), mType)));
                             else
-                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType, typeof(UnmanagedType)), Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr), mType)));
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.Value, typeof(UnmanagedType)), Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr), mType)));
                         }
-                        else if (mType.GetCustomAttribute<MemberIndexAttribute>() != null && mType.GetCustomAttribute<MemberIndexAttribute>().SizeCount > 0)
+                        else if (mInfo.GetCustomAttribute<MemberIndexAttribute>() != null && mInfo.GetCustomAttribute<MemberIndexAttribute>().SizeCount > 0)
                         {
-                            variableLengthExpr = Expression.Variable(typeof(uint), variableKey);
-                            var variableLength = mType.GetCustomAttribute<MemberIndexAttribute>().SizeCount;
-                            variantLengthVariableParamExprList.Add(variableKey, variableLengthExpr);
+                            var variableLength = mInfo.GetCustomAttribute<MemberIndexAttribute>().SizeCount;
 
                             if (marshalAs == null)
-                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayFromStreamMethodInfo, streamVariableExpr, Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr), mType)));
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayFromStreamMethodInfo, streamVariableExpr, Expression.Constant(elementType, typeof(Type)), Expression.Constant(variableLength), isBigEndianExpr), mType)));
                             else
-                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType, typeof(UnmanagedType)), Expression.Constant(elementType, typeof(Type)), variableLengthExpr, isBigEndianExpr), mType)));
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.ArraySubType, typeof(UnmanagedType)), Expression.Constant(elementType, elementType.GetType()), Expression.Constant(variableLength), isBigEndianExpr), mType)));
+                        }
+                        else if (mInfo == mInfos.Last())
+                        {
+                            // if there is no lengthto and sizecount exists, and this member is the last property/field of target type, use all remain bytes to convert to it.
+                            if (marshalAs == null)
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayFromStreamNoLengthMethodInfo, streamVariableExpr, Expression.Constant(elementType, typeof(Type)), isBigEndianExpr), mType)));
+                            else
+                                inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getArrayMarshalAsFromStreamNoLengthMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.Value, typeof(UnmanagedType)), Expression.Constant(elementType, typeof(Type)), isBigEndianExpr), mType)));
                         }
                         else
                         {
@@ -97,17 +106,20 @@ namespace TPSLRawDataSimulator
                     }
                     else if (mInfo.GetCustomAttribute<MemberIndexAttribute>().LengthTo is string mName && !string.IsNullOrEmpty(mName))
                     {
-                        var variablelength = Expression.Variable(mType, mName + "Length");
+                        var variablelength = Expression.Variable(typeof(long), mName + "Length");
                         variantLengthVariableParamExprList.Add(mName + "Length", variablelength);
-                        inBlockExpressions.Add(Expression.Assign(variablelength, Expression.Convert(Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mType), Expression.Constant(structToRaw == null ? !BitConverter.IsLittleEndian : structToRaw.Endian == Endian.BigEndian)), mType)));
-                        inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), variablelength));
+                        if (marshalAs == null)
+                            inBlockExpressions.Add(Expression.Assign(variablelength, Expression.Convert(Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mType), Expression.Constant(structToRaw == null ? !BitConverter.IsLittleEndian : structToRaw.Endian == Endian.BigEndian)), mType)));
+                        else
+                            inBlockExpressions.Add(Expression.Assign(variablelength, Expression.Convert(Expression.Call(null, getTypedObjMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.Value, typeof(UnmanagedType)), Expression.Constant(mType), Expression.Constant(structToRaw == null ? !BitConverter.IsLittleEndian : structToRaw.Endian == Endian.BigEndian)), mType)));
+                        inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(variablelength, mType)));
                     }
                     else
                     {
                         if (marshalAs == null)
                             inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getTypedObjFromStreamMethodInfo, streamVariableExpr, Expression.Constant(mType, typeof(Type)), isBigEndianExpr), mType)));
                         else
-                            inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getTypedObjMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.MarshalType, typeof(UnmanagedType)), Expression.Constant(mType, typeof(Type)), isBigEndianExpr), mType)));
+                            inBlockExpressions.Add(Expression.Assign(Expression.MakeMemberAccess(returnObjExp, mInfo), Expression.Convert(Expression.Call(null, getTypedObjMarshalAsFromStreamMethodInfo, streamVariableExpr, Expression.Constant(marshalAs.Value, typeof(UnmanagedType)), Expression.Constant(mType, typeof(Type)), isBigEndianExpr), mType)));
                     }
                 }
                 var blockDefineContext = variantLengthVariableParamExprList.Values.ToArray().Concat(new[] { returnObjExp });
@@ -259,6 +271,95 @@ namespace TPSLRawDataSimulator
         }
     }
 
+    /// <summary>
+    /// attention: multi thread unsafe.
+    /// </summary>
+    public class BoundAutoStreamTransfers
+    {
+        private List<byte> buffer = new List<byte>();
+        public RawBinaryFormatter Formatter = new RawBinaryFormatter();
+        public void addBytes(byte[] bytes)
+        {
+            buffer.AddRange(bytes);
+
+        }
+
+        public bool TryGetAnObject(Type type, (byte[] Start, byte[] End) bound, out object obj)
+        {
+            var arrayBuffer = buffer.ToArray();
+            var boundStartIndex = SundaySearch(arrayBuffer, bound.Start);
+            var boundEndIndex = SundaySearch(arrayBuffer, bound.End);
+            obj = null;
+            if (boundStartIndex >= 0 && boundEndIndex >= 0 && boundStartIndex < boundEndIndex)
+            {
+                var oneObjBuff = arrayBuffer[boundStartIndex..(boundEndIndex + bound.End.Length + 1)];
+                buffer.RemoveRange(0, oneObjBuff.Length);
+
+                obj = this.Formatter.Deserialize(new MemoryStream(oneObjBuff), type);
+
+                return true;
+            }
+            // found corrupted data in buffer. remove them and return false.
+            else if (boundStartIndex < 0 && boundEndIndex >= 0) {
+                var oneObjBuff = arrayBuffer[0..(boundEndIndex + bound.End.Length + 1)];
+                buffer.RemoveRange(0, oneObjBuff.Length);
+                return false;
+            }
+            else if (boundEndIndex < boundStartIndex) {
+                var oneObjBuff = arrayBuffer[0..(boundEndIndex + bound.End.Length + 1)];
+                buffer.RemoveRange(0, oneObjBuff.Length);
+                return false;
+            }
+            else
+            {
+                return false;
+            }
+
+        }
+
+        private static int SundaySearch(byte[] data, byte[] pattern)
+        {
+            int i = 0;
+            int j = 0;
+            int m = pattern.Length;
+            int matchPosition = i;
+
+            while (i < data.Length && j < pattern.Length)
+            {
+                if (data[i] == pattern[j])
+                {
+                    i++;
+                    j++;
+                }
+                else
+                {
+                    if (m == data.Length - 1) break;
+
+                    int k = pattern.Length - 1;
+
+                    while (k >= 0 && data[m] != pattern[k])
+                    {
+                        k--;
+                    }
+
+                    int gap = pattern.Length - k;
+                    i += gap;
+                    m = i + pattern.Length;
+                    if (m > data.Length) m = data.Length - 1;
+                    matchPosition = i;
+                    j = 0;
+                }
+            }
+
+            if (i <= data.Length)
+            {
+                return matchPosition;
+            }
+
+            return -1;
+        }
+    }
+
 
     public static class ExpressionHelper
     {
@@ -322,7 +423,7 @@ namespace TPSLRawDataSimulator
         /// <summary>
         /// spec the Array Lenth. Length to will effect the raw layout of data. but this will be hard code length.
         /// </summary>
-        public uint SizeCount { get; set; }
+        public long SizeCount { get; set; }
     }
 
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false)]
