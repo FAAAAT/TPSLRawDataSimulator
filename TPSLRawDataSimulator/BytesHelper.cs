@@ -615,6 +615,17 @@ namespace TPSLRawDataSimulator
             return result;
         }
 
+        public static int BCDToInt32(byte[] multiBytesBCDs)
+        {
+            var result = 0;
+            foreach (var bcd in multiBytesBCDs) {
+                result *= 100;
+                result += (10 * (bcd >> 4));
+                result += bcd & 0xf;
+            }
+            return result;
+        }
+
         public static ushort Calculator_CRC16(byte[] buf, int length)
         {
             ushort value, crc_reg = 0xFFFF;

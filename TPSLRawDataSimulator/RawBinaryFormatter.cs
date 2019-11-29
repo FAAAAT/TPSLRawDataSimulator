@@ -292,7 +292,7 @@ namespace TPSLRawDataSimulator
             obj = null;
             if (boundStartIndex >= 0 && boundEndIndex >= 0 && boundStartIndex < boundEndIndex)
             {
-                var oneObjBuff = arrayBuffer[boundStartIndex..(boundEndIndex + bound.End.Length + 1)];
+                var oneObjBuff = arrayBuffer[boundStartIndex..(boundEndIndex + bound.End.Length)];
                 buffer.RemoveRange(0, oneObjBuff.Length);
 
                 obj = this.Formatter.Deserialize(new MemoryStream(oneObjBuff), type);
@@ -322,7 +322,7 @@ namespace TPSLRawDataSimulator
             int i = 0;
             int j = 0;
             int m = pattern.Length;
-            int matchPosition = i;
+            int matchPosition = -1;
 
             while (i < data.Length && j < pattern.Length)
             {
@@ -351,7 +351,7 @@ namespace TPSLRawDataSimulator
                 }
             }
 
-            if (i <= data.Length)
+            if (i <= data.Length && j == pattern.Length)
             {
                 return matchPosition;
             }
@@ -409,7 +409,7 @@ namespace TPSLRawDataSimulator
     /// Serialization: Endian is for target buffer.
     /// Deserialization: Endian is for source buffer.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+    [AttributeUsage(AttributeTargets.Struct|AttributeTargets.Class, AllowMultiple = false, Inherited = false)]
     public class StructToRawAttribute : Attribute
     {
         public Endian Endian { get; set; }
