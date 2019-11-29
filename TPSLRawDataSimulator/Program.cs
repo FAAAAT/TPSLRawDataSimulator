@@ -100,7 +100,6 @@ namespace TPSLRawDataSimulator
                 ((TPSLWrapper)wrapper3).FillObject(formatter);
             }
 
-
             Console.ReadLine();
         }
      

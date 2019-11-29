@@ -14,6 +14,13 @@ using System.Text;
 
 namespace TPSLRawDataSimulator
 {
+    /// <summary>
+    /// TODO:
+    /// (low)   1.sometimes source type can not be marked with attribute. so maybe we can use a middle type to proxy it.
+    /// (high)  2.when deserialize an object, now we can just do it with a static buffer. we want a stream like way. for this, i think we can found some ways to detect the buffer bound of type first, and get the type that we known the length. then deserialize will work fine.
+    /// (high)  3.the reference object in an object can not autometicly serialize/deserialize for now.
+    /// (low)   4.in the future, maybe we can implement text-based type defination.maybe a code generator also.
+    /// </summary>
     public class RawBinaryFormatter
     {
         private ConcurrentDictionary<Type, Func<object, byte[]>> ExpressionStorage = new ConcurrentDictionary<Type, Func<object, byte[]>>();
@@ -301,12 +308,12 @@ namespace TPSLRawDataSimulator
             }
             // found corrupted data in buffer. remove them and return false.
             else if (boundStartIndex < 0 && boundEndIndex >= 0) {
-                var oneObjBuff = arrayBuffer[0..(boundEndIndex + bound.End.Length + 1)];
+                var oneObjBuff = arrayBuffer[0..(boundEndIndex + bound.End.Length)];
                 buffer.RemoveRange(0, oneObjBuff.Length);
                 return false;
             }
             else if (boundEndIndex < boundStartIndex) {
-                var oneObjBuff = arrayBuffer[0..(boundEndIndex + bound.End.Length + 1)];
+                var oneObjBuff = arrayBuffer[0..(boundEndIndex + bound.End.Length)];
                 buffer.RemoveRange(0, oneObjBuff.Length);
                 return false;
             }
@@ -322,7 +329,7 @@ namespace TPSLRawDataSimulator
             int i = 0;
             int j = 0;
             int m = pattern.Length;
-            int matchPosition = -1;
+            int matchPosition = i;
 
             while (i < data.Length && j < pattern.Length)
             {
