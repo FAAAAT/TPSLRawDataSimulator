@@ -301,12 +301,12 @@ namespace TPSLRawDataSimulator
             }
             // found corrupted data in buffer. remove them and return false.
             else if (boundStartIndex < 0 && boundEndIndex >= 0) {
-                var oneObjBuff = arrayBuffer[0..(boundEndIndex + bound.End.Length + 1)];
+                var oneObjBuff = arrayBuffer[0..(boundEndIndex + bound.End.Length)];
                 buffer.RemoveRange(0, oneObjBuff.Length);
                 return false;
             }
             else if (boundEndIndex < boundStartIndex) {
-                var oneObjBuff = arrayBuffer[0..(boundEndIndex + bound.End.Length + 1)];
+                var oneObjBuff = arrayBuffer[0..(boundEndIndex + bound.End.Length)];
                 buffer.RemoveRange(0, oneObjBuff.Length);
                 return false;
             }
@@ -322,7 +322,7 @@ namespace TPSLRawDataSimulator
             int i = 0;
             int j = 0;
             int m = pattern.Length;
-            int matchPosition = -1;
+            int matchPosition = i;
 
             while (i < data.Length && j < pattern.Length)
             {
